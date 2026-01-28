@@ -1,0 +1,178 @@
+.login-container {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+}
+
+/* Lado Esquerdo - Branding */
+.login-banner {
+  flex: 1;
+  background-color: var(--color-black);
+  max-width: 750px;
+  color: var(--color-white);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: var(--space-2xl);
+  position: relative;
+  overflow: hidden;
+}
+
+/* CLASSE NOVA PARA A LOGO */
+.login-logo {
+  max-width: 180px; /* Ajuste conforme necessário */
+  height: auto;
+  display: block;
+}
+
+/* Padrão de fundo sutil (CSS puro) */
+.login-banner::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background-image: radial-gradient(circle at 50% 50%, #1a1a1a 1px, transparent 1px);
+  background-size: 40px 40px;
+  opacity: 0.3;
+  transform: rotate(15deg);
+}
+
+.banner-content {
+  position: relative;
+  z-index: 2;
+  max-width: 400px;
+}
+
+.quote {
+  font-size: 1.5rem;
+  font-weight: 500;
+  line-height: 1.4;
+  margin-bottom: var(--space-md);
+}
+
+.author {
+  color: var(--color-gray-500);
+}
+
+/* Lado Direito - Formulário */
+.login-form-wrapper {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-white);
+  padding: var(--space-lg);
+}
+
+.login-box {
+  width: 100%;
+  max-width: 400px;
+}
+
+.form-header {
+  text-align: center;
+  margin-bottom: var(--space-xl);
+}
+
+.form-header h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: var(--space-xs);
+}
+
+.form-header p {
+  color: var(--color-gray-500);
+}
+
+/* Inputs */
+.input-group {
+  margin-bottom: var(--space-lg);
+}
+
+.input-label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin-bottom: 6px;
+  color: var(--color-gray-800);
+}
+
+.input-field {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-md);
+  font-size: 1rem;
+  transition: all 0.2s;
+  outline: none;
+  font-family: inherit;
+}
+
+.input-field:focus {
+  border-color: var(--color-black);
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
+}
+
+/* Botão */
+.btn-submit {
+  width: 100%;
+  background-color: var(--color-black);
+  color: var(--color-white);
+  padding: 12px;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: 1rem;
+  margin-top: var(--space-md);
+  transition: opacity 0.2s;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-submit:hover {
+  opacity: 0.9;
+}
+
+/* Links auxiliares */
+.form-footer {
+  margin-top: var(--space-xl);
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--color-gray-500);
+}
+
+.link-highlight {
+  color: var(--color-black);
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.back-link {
+  position: absolute;
+  top: var(--space-lg);
+  left: var(--space-lg);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  color: var(--color-black);
+  text-decoration: none;
+}
+
+/* Responsividade */
+@media (max-width: 900px) {
+  .login-container {
+    flex-direction: column;
+  }
+  
+  .login-banner {
+    display: none; /* Oculta o banner em mobile para focar no login */
+  }
+  
+  .login-form-wrapper {
+    padding: var(--space-xl) var(--space-md);
+  }
+}

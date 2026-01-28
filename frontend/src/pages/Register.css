@@ -1,0 +1,191 @@
+/* src/pages/Register.css */
+.register-container {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+}
+
+/* Reutilizando a estrutura do Banner (Lado Esquerdo) */
+.register-banner {
+  flex: 1;
+  background-color: var(--color-black);
+  color: var(--color-white);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: var(--space-2xl);
+  position: relative;
+  overflow: hidden;
+}
+
+.register-banner::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background-image: radial-gradient(circle at 50% 50%, #1a1a1a 1px, transparent 1px);
+  background-size: 40px 40px;
+  opacity: 0.3;
+  transform: rotate(-15deg); /* Rotação inversa ao login para dinamismo */
+}
+
+.banner-content {
+  position: relative;
+  z-index: 2;
+  max-width: 400px;
+}
+
+.quote {
+  font-size: 1.5rem;
+  font-weight: 500;
+  line-height: 1.4;
+  margin-bottom: var(--space-md);
+}
+
+.author {
+  color: var(--color-gray-500);
+}
+
+/* Área do Formulário (Lado Direito) */
+.register-form-wrapper {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-white);
+  padding: var(--space-lg);
+  position: relative;
+}
+
+.register-box {
+  width: 100%;
+  max-width: 420px; /* Um pouco mais largo que o login */
+}
+
+/* SELETOR DE TIPO DE CONTA (NOVO) */
+.account-selector {
+  display: flex;
+  background-color: var(--color-gray-100);
+  padding: 4px;
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-xl);
+}
+
+.selector-btn {
+  flex: 1;
+  padding: 10px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--color-gray-500);
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.selector-btn:hover {
+  color: var(--color-black);
+}
+
+.selector-btn.active {
+  background-color: var(--color-white);
+  color: var(--color-black);
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+/* Inputs e Labels */
+.form-header {
+  text-align: center;
+  margin-bottom: var(--space-lg);
+}
+
+.form-header h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: var(--space-xs);
+}
+
+.form-header p {
+  color: var(--color-gray-500);
+}
+
+.input-group {
+  margin-bottom: var(--space-md); /* Espaçamento menor para caber mais campos */
+}
+
+.input-label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin-bottom: 6px;
+  color: var(--color-gray-800);
+}
+
+.input-field {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-md);
+  font-size: 0.95rem;
+  transition: all 0.2s;
+  outline: none;
+  font-family: inherit;
+}
+
+.input-field:focus {
+  border-color: var(--color-black);
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
+}
+
+.btn-submit {
+  width: 100%;
+  background-color: var(--color-black);
+  color: var(--color-white);
+  padding: 12px;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: 1rem;
+  margin-top: var(--space-lg);
+  transition: opacity 0.2s;
+}
+
+.btn-submit:hover {
+  opacity: 0.9;
+}
+
+.form-footer {
+  margin-top: var(--space-xl);
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--color-gray-500);
+}
+
+.link-highlight {
+  color: var(--color-black);
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.back-link {
+  position: absolute;
+  top: var(--space-lg);
+  left: var(--space-lg);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  color: var(--color-black);
+  font-size: 0.9rem;
+}
+
+/* Responsividade */
+@media (max-width: 900px) {
+  .register-container { flex-direction: column; }
+  .register-banner { display: none; }
+  .register-form-wrapper { padding: var(--space-xl) var(--space-md); }
+}

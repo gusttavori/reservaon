@@ -1,0 +1,314 @@
+/* src/components/FinancialManager.css */
+
+/* Container Principal - Mantém centralizado na página */
+.financial-container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  color: #1e293b;
+}
+
+/* Header: Filtros e Botão */
+.financial-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.filters {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.select-custom {
+  padding: 0.6rem 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background-color: white;
+  color: #475569;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  outline: none;
+}
+
+.select-custom:hover {
+  border-color: #cbd5e1;
+}
+
+.btn-expense {
+  background-color: #ef4444;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.25rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+  box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.2);
+}
+
+.btn-expense:hover {
+  background-color: #dc2626;
+  transform: translateY(-1px);
+}
+
+.btn-expense:active {
+  transform: translateY(0);
+}
+
+/* Formulário de Despesas (Expansível) */
+.expense-form-container {
+  background-color: #fff;
+  border: 1px solid #fecaca;
+  border-left: 4px solid #ef4444;
+  padding: 1.5rem;
+  border-radius: 8px;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.form-title {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: #991b1b;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.expense-form {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.form-group.grow {
+  flex: 2;
+  min-width: 250px;
+}
+
+.form-group.normal {
+  flex: 1;
+  min-width: 140px;
+}
+
+.input-label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #64748b;
+}
+
+.input-field {
+  padding: 0.6rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.input-field:focus {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.btn-save {
+  padding: 0.65rem 1.5rem;
+  background-color: #1e293b;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  height: 40px;
+}
+
+.btn-save:hover {
+  background-color: #0f172a;
+}
+
+/* KPIs Cards */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2.5rem;
+}
+
+.stat-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+}
+
+.stat-card.green .icon-box { background: #dcfce7; color: #166534; }
+.stat-card.green .stat-value { color: #15803d; }
+
+.stat-card.red .icon-box { background: #fee2e2; color: #991b1b; }
+.stat-card.red .stat-value { color: #dc2626; }
+
+.stat-card.blue .icon-box { background: #e0f2fe; color: #0369a1; }
+.stat-card.blue .stat-value { color: #0284c7; }
+
+.stat-card.orange .icon-box { background: #ffedd5; color: #9a3412; }
+.stat-card.orange .stat-value { color: #ea580c; }
+
+.icon-box {
+  width: 50px;
+  height: 50px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.stat-info h4 {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.stat-value {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+/* Listas de Extrato - MUDANÇA AQUI PARA ALINHAMENTO */
+.transactions-grid {
+  display: grid;
+  grid-template-columns: 1fr; /* Padrão para mobile */
+  gap: 2rem;
+}
+
+/* Em tablets e desktops, força duas colunas de largura idêntica */
+@media (min-width: 768px) {
+  .transactions-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.list-header {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #f1f5f9;
+}
+
+.transaction-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.transaction-item {
+  background: white;
+  border: 1px solid #f1f5f9;
+  border-radius: 10px;
+  padding: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.2s;
+}
+
+.transaction-item:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+
+.transaction-item.income { border-left: 4px solid #22c55e; }
+.transaction-item.income.pending { border-left: 4px solid #cbd5e1; opacity: 0.7; }
+.transaction-item.expense { border-left: 4px solid #ef4444; }
+
+.t-info strong {
+  display: block;
+  font-size: 0.95rem;
+  color: #334155;
+  margin-bottom: 0.2rem;
+}
+
+.t-info span {
+  font-size: 0.8rem;
+  color: #94a3b8;
+}
+
+.t-amount {
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.income .t-amount { color: #16a34a; }
+.income.pending .t-amount { color: #94a3b8; }
+.expense .t-amount { color: #dc2626; }
+
+/* Estado Vazio - MUDANÇA AQUI PARA PADRONIZAR */
+.empty-state {
+  text-align: center;
+  padding: 1.5rem;
+  background: #f8fafc;
+  border-radius: 10px; /* Mesmo raio dos itens */
+  border: 1px solid #f1f5f9; /* Mesma borda sutil dos itens */
+  color: #94a3b8;
+  font-size: 0.9rem;
+  /* Garante que a caixa tenha altura e alinhamento central */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 72px; /* Altura similar a um item de transação padrão */
+}
+
+.btn-delete {
+  background: none;
+  border: none;
+  color: #cbd5e1;
+  cursor: pointer;
+  padding: 4px;
+  transition: color 0.2s;
+  margin-left: 10px;
+}
+
+.btn-delete:hover {
+  color: #ef4444;
+}

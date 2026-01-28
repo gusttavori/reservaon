@@ -1,0 +1,114 @@
+.waiting-container {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.empty-waiting {
+  text-align: center;
+  padding: 3rem;
+  background: white;
+  border-radius: 12px;
+  border: 1px dashed #cbd5e1;
+  color: #94a3b8;
+}
+
+.waiting-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.waiting-card {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.waiting-card.notified { border-left: 4px solid #f59e0b; }
+.waiting-card.scheduled { border-left: 4px solid #10b981; opacity: 0.7; }
+.waiting-card.waiting { border-left: 4px solid #3b82f6; }
+
+.waiting-info h4 {
+  margin: 0 0 5px 0;
+  color: #1e293b;
+  font-size: 1.1rem;
+}
+
+.waiting-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.status-tag {
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.status-tag.waiting { background: #dbeafe; color: #1e40af; }
+.status-tag.notified { background: #fef3c7; color: #b45309; }
+.status-tag.scheduled { background: #d1fae5; color: #065f46; }
+
+.waiting-detail {
+  margin: 2px 0;
+  font-size: 0.9rem;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.waiting-notes {
+  font-style: italic;
+  background: #f8fafc;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  color: #475569;
+  margin-top: 6px;
+}
+
+.waiting-time {
+  display: block;
+  margin-top: 8px;
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.waiting-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.action-btn-w {
+  border: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  transition: transform 0.1s;
+}
+
+.action-btn-w:hover { transform: translateY(-2px); }
+
+.action-btn-w.whatsapp { background: #25D366; color: white; }
+.action-btn-w.schedule { background: #10b981; color: white; }
+.action-btn-w.remove { background: #fee2e2; color: #ef4444; }
+
+@media (max-width: 600px) {
+  .waiting-card { flex-direction: column; align-items: flex-start; }
+  .waiting-actions { width: 100%; justify-content: space-between; margin-top: 10px; }
+  .action-btn-w { flex: 1; justify-content: center; }
+}

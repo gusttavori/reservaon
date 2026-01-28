@@ -1,0 +1,88 @@
+/* src/components/SocialProof.css */
+.social-proof-section {
+  padding: var(--space-2xl) 0;
+  background-color: var(--color-white);
+  border-top: 1px solid var(--color-gray-100);
+  text-align: center;
+}
+
+/* Container dos Números */
+.stats-container {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-2xl);
+  margin-bottom: var(--space-2xl);
+  flex-wrap: wrap;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.stat-number {
+  font-size: 3rem;
+  font-weight: 800;
+  color: var(--color-black);
+  line-height: 1;
+  margin-bottom: var(--space-xs);
+}
+
+.stat-label {
+  color: var(--color-gray-500);
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+/* Grid de Logos (Simulados com CSS para performance) */
+.logos-grid {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--space-xl);
+  opacity: 0.6; /* Deixa os logos mais discretos */
+  flex-wrap: wrap;
+  margin-bottom: var(--space-xl);
+}
+
+/* Estilos falsos de logos (apenas tipografia) */
+.fake-logo {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--color-black);
+  letter-spacing: -1px;
+  user-select: none;
+}
+
+.logo-serif { font-family: serif; font-style: italic; }
+.logo-mono { font-family: monospace; letter-spacing: 2px; }
+.logo-box { background: #000; color: #fff; padding: 2px 8px; }
+
+/* Texto de Garantia */
+.guarantee-box {
+  background-color: var(--color-gray-100);
+  display: inline-block;
+  padding: var(--space-md) var(--space-xl);
+  border-radius: 50px;
+  margin-top: var(--space-lg);
+}
+
+.guarantee-text {
+  font-size: 0.9rem;
+  color: var(--color-gray-800);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+@media (max-width: 768px) {
+  .stats-container {
+    gap: var(--space-lg);
+  }
+  .stat-number {
+    font-size: 2rem;
+  }
+}

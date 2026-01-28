@@ -1,0 +1,152 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Plan {
+  id        String    @id @default(uuid())
+  name      String
+  slug      String    @unique
+  price     Decimal
+  features  Json
+  companies Company[]
+}
+
+model Company {
+  id                   String        @id @default(uuid())
+  name                 String
+  slug                 String        @unique
+  active               Boolean       @default(true)
+  planId               String
+  plan                 Plan          @relation(fields: [planId], references: [id])
+  users                User[]
+  services             Service[]
+  appointments         Appointment[]
+  expenses             Expense[]
+  waitingList          WaitingList[]
+  reviews              Review[]
+  activityLogs         ActivityLog[]
+  
+  // Informações de Contato e Identidade
+  whatsapp             String?       @default("")
+  address              String?       @default("")
+  description          String?       @default("")
+  logoUrl              String?       @default("")
+  category             String        @default("Outros") // <--- NOVO
+  
+  // Horários
+  openingTime          String        @default("09:00")
+  closingTime          String        @default("18:00")
+  workDays             String        @default("1,2,3,4,5")
+  workSchedule         Json?
+  
+  // Pagamento
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+  subscriptionStatus   String        @default("INACTIVE")
+  
+  createdAt            DateTime      @default(now())
+}
+
+model User {
+  id                   String         @id @default(uuid())
+  name                 String
+  email                String         @unique
+  password             String
+  role                 String         @default("OWNER")
+  companyId            String
+  company              Company        @relation(fields: [companyId], references: [id])
+  appointments         Appointment[]
+  refreshTokens        RefreshToken[]
+  activityLogs         ActivityLog[]
+  resetPasswordToken   String?
+  resetPasswordExpires DateTime?
+  
+  // Permissões
+  canViewFinancials    Boolean        @default(false) // <--- NOVO
+  canManageAgenda      Boolean        @default(true)  // <--- NOVO
+  
+  createdAt            DateTime       @default(now())
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresIn Int
+  createdAt DateTime @default(now())
+}
+
+model Service {
+  id           String        @id @default(uuid())
+  name         String
+  price        Decimal
+  duration     Int
+  bufferTime   Int           @default(0)
+  companyId    String
+  company      Company       @relation(fields: [companyId], references: [id])
+  appointments Appointment[]
+}
+
+model Appointment {
+  id             String   @id @default(uuid())
+  date           DateTime
+  status         String   @default("PENDING")
+  customerName   String
+  customerPhone  String?
+  companyId      String
+  company        Company  @relation(fields: [companyId], references: [id])
+  serviceId      String
+  service        Service  @relation(fields: [serviceId], references: [id])
+  professionalId String?
+  professional   User?    @relation(fields: [professionalId], references: [id])
+  createdAt      DateTime @default(now())
+}
+
+model Expense {
+  id          String   @id @default(uuid())
+  description String
+  amount      Decimal
+  date        DateTime
+  companyId   String
+  company     Company  @relation(fields: [companyId], references: [id])
+  createdAt   DateTime @default(now())
+}
+
+model WaitingList {
+  id           String   @id @default(uuid())
+  customerName String
+  phone        String
+  serviceName  String?
+  notes        String?
+  status       String   @default("WAITING")
+  companyId    String
+  company      Company  @relation(fields: [companyId], references: [id])
+  createdAt    DateTime @default(now())
+}
+
+model Review {
+  id           String   @id @default(uuid())
+  rating       Int
+  comment      String?
+  customerName String?
+  companyId    String
+  company      Company  @relation(fields: [companyId], references: [id])
+  createdAt    DateTime @default(now())
+}
+
+model ActivityLog {
+  id        String   @id @default(uuid())
+  action    String
+  details   String?
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id])
+  createdAt DateTime @default(now())
+}

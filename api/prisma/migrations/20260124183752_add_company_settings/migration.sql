@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE "Company" ADD COLUMN     "closingTime" TEXT NOT NULL DEFAULT '18:00',
+ADD COLUMN     "openingTime" TEXT NOT NULL DEFAULT '09:00',
+ADD COLUMN     "workDays" TEXT NOT NULL DEFAULT '1,2,3,4,5';

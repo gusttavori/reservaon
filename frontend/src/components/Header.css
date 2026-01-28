@@ -1,0 +1,116 @@
+/* src/components/Header.css */
+.header {
+  height: var(--header-height);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background-color: rgba(255, 255, 255, 0.95); /* Leve transparência */
+  backdrop-filter: blur(10px); /* Efeito vidro moderno */
+  border-bottom: 1px solid var(--color-gray-200);
+  display: flex;
+  align-items: center;
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+/* Adicione ou substitua isso no Header.css */
+.logo-link {
+  display: flex;
+  align-items: center;
+}
+
+.header-logo {
+  height: 40px; /* Ajuste conforme necessário */
+  width: auto;
+  object-fit: contain;
+  filter: brightness(0) invert(0);
+}
+
+/* Desktop Navigation */
+.nav-desktop {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xl);
+}
+
+.nav-links {
+  display: flex;
+  gap: var(--space-lg);
+}
+
+.nav-link {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--color-gray-500);
+  transition: color 0.2s ease;
+}
+
+.nav-link:hover {
+  color: var(--color-black);
+}
+
+/* Buttons */
+.btn-login {
+  font-weight: 600;
+  margin-right: var(--space-md);
+  background: transparent;
+}
+
+.btn-primary {
+  background-color: var(--color-black);
+  color: var(--color-white);
+  padding: 0.6rem 1.2rem;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  transition: transform 0.2s, opacity 
+  
+  0.2s;
+}
+
+.btn-primary:hover {
+  background-color: var(--color-white);
+  border: 1px solid var(--color-black);
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+/* Mobile Toggle */
+.mobile-toggle {
+  display: none;
+  background: none;
+}
+
+/* Mobile Menu */
+.mobile-menu {
+  position: absolute;
+  top: var(--header-height);
+  left: 0;
+  width: 100%;
+  background: var(--color-white);
+  padding: var(--space-lg);
+  border-bottom: 1px solid var(--color-gray-200);
+  flex-direction: column;
+  gap: var(--space-md);
+  display: none;
+}
+
+.mobile-menu.open {
+  display: flex;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .nav-desktop { display: none; }
+  .mobile-toggle { display: block; }
+}

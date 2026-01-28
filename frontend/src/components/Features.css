@@ -1,0 +1,126 @@
+.features-section {
+  padding: 6rem 0;
+  background-color: #ffffff; /* Fundo branco limpo */
+  border-top: 1px solid #e2e8f0;
+}
+
+.features-header {
+  text-align: center;
+  margin-bottom: 4rem;
+  max-width: 700px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Kicker (Texto pequeno acima do título) */
+.features-kicker {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #0f172a; /* Preto */
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  display: block;
+  margin-bottom: 1rem;
+  opacity: 0.7;
+}
+
+.features-title {
+  font-size: 2.25rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin-bottom: 1rem;
+  letter-spacing: -1px;
+  line-height: 1.1;
+}
+
+.features-subtitle {
+  font-size: 1.1rem;
+  color: #64748b;
+  line-height: 1.6;
+}
+
+/* GRID */
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 2rem;
+}
+
+/* CARD */
+.feature-card {
+  background: #f8fafc; /* Cinza muito claro para o fundo do card */
+  padding: 2rem;
+  border-radius: 16px;
+  border: 1px solid transparent; /* Borda invisível por padrão */
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Efeito Hover Preto e Branco */
+.feature-card:hover {
+  transform: translateY(-5px);
+  background: #ffffff;
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.1);
+  border-color: #0f172a; /* Borda preta ao passar o mouse */
+}
+
+/* ÍCONE */
+.feature-icon-wrapper {
+  background: #ffffff; /* Fundo branco */
+  color: #0f172a; /* Ícone preto */
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+  transition: all 0.3s ease;
+}
+
+/* Animação do ícone no hover do card */
+.feature-card:hover .feature-icon-wrapper {
+  background: #0f172a; /* Fundo preto */
+  color: #ffffff; /* Ícone branco */
+  border-color: #0f172a;
+  transform: scale(1.05) rotate(3deg);
+}
+
+.feature-content {
+  flex: 1;
+}
+
+.feature-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 0.75rem;
+}
+
+.feature-desc {
+  font-size: 0.95rem;
+  color: #64748b;
+  line-height: 1.6;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .features-section {
+    padding: 4rem 0;
+  }
+  
+  .features-title {
+    font-size: 1.8rem;
+  }
+
+  .features-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+}
