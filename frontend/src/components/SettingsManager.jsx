@@ -1,187 +1,246 @@
-import { useState, useEffect } from 'react';
-import api from '../services/api'; // Importando a API correta
-import { Save, Upload, User, MapPin, Phone, Globe, Clock } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import axios from 'axios';
+import { Save, Phone, Calendar, MapPin, FileText, Image, Upload, Trash2 } from 'lucide-react';
 import './SettingsManager.css';
 
 const SettingsManager = () => {
-  const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    companyName: '',
-    description: '',
-    address: '',
+  const fileInputRef = useRef(null);
+  const [uploading, setUploading] = useState(false);
+
+  const defaultSchedule = Array.from({ length: 7 }, (_, i) => ({
+    day: i,
+    active: i > 0 && i < 6,
+    start: '09:00',
+    end: '18:00'
+  }));
+
+  const [settings, setSettings] = useState({
     whatsapp: '',
-    openingTime: '09:00',
-    closingTime: '18:00',
-    logoUrl: ''
+    address: '',
+    description: '',
+    logoUrl: '',
+    workSchedule: defaultSchedule
   });
 
-  const [logoFile, setLogoFile] = useState(null);
-  const [preview, setPreview] = useState(null);
+  const dayNames = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
 
   useEffect(() => {
-    loadSettings();
+    fetchSettings();
   }, []);
 
-  const loadSettings = async () => {
+  const fetchSettings = async () => {
     try {
-      const { data } = await api.get('/api/company/me');
-      setFormData({
-        companyName: data.name || '',
-        description: data.description || '',
-        address: data.address || '',
-        whatsapp: data.whatsapp || '',
-        openingTime: data.openingTime || '09:00',
-        closingTime: data.closingTime || '18:00',
-        logoUrl: data.logoUrl || ''
+      const token = localStorage.getItem('token');
+      const res = await axios.get('http://localhost:3000/api/company/settings', {
+        headers: { Authorization: `Bearer ${token}` }
       });
-      if (data.logoUrl) setPreview(data.logoUrl);
+      
+      setSettings({
+        whatsapp: res.data.whatsapp || '',
+        address: res.data.address || '',
+        description: res.data.description || '',
+        logoUrl: res.data.logoUrl || '',
+        workSchedule: res.data.workSchedule || defaultSchedule
+      });
     } catch (error) {
-      console.error("Erro ao carregar configurações", error);
+      console.error("Erro ao carregar configs", error);
     }
   };
 
-  const handleFileChange = (e) => {
+  const handleImageUpload = async (e) => {
     const file = e.target.files[0];
-    if (file) {
-      setLogoFile(file);
-      setPreview(URL.createObjectURL(file));
+    if (!file) return;
+
+    setUploading(true);
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.post('http://localhost:3000/api/upload', formData, {
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      
+      setSettings({ ...settings, logoUrl: res.data.url });
+    } catch (error) {
+      alert("Erro ao fazer upload da imagem.");
+      console.error(error);
+    } finally {
+      setUploading(false);
     }
   };
 
   const handleSave = async (e) => {
     e.preventDefault();
-    setLoading(true);
-
     try {
-      // 1. Upload da Logo (se houver nova)
-      let currentLogoUrl = formData.logoUrl;
-
-      if (logoFile) {
-        const uploadData = new FormData();
-        uploadData.append('file', logoFile);
-        
-        const uploadRes = await api.post('/api/upload', uploadData, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        });
-        currentLogoUrl = uploadRes.data.url;
-      }
-
-      // 2. Salvar dados da empresa
-      const payload = {
-        name: formData.companyName,
-        description: formData.description,
-        address: formData.address,
-        whatsapp: formData.whatsapp,
-        openingTime: formData.openingTime,
-        closingTime: formData.closingTime,
-        logoUrl: currentLogoUrl
-      };
-
-      const res = await api.put('/api/company/me', payload);
-      
-      // Atualiza o user no localStorage para refletir o novo nome/logo
-      const user = JSON.parse(localStorage.getItem('user'));
-      if (user) {
-        user.company = res.data.name;
-        user.logoUrl = res.data.logoUrl;
-        localStorage.setItem('user', JSON.stringify(user));
-      }
-
-      alert("Configurações salvas com sucesso!");
+      const token = localStorage.getItem('token');
+      await axios.put('http://localhost:3000/api/company/settings', {
+        ...settings,
+        openingTime: settings.workSchedule[1].start,
+        closingTime: settings.workSchedule[1].end,
+        workDays: settings.workSchedule.filter(d => d.active).map(d => d.day).join(',')
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      alert("Configurações salvas com sucesso! ✅");
     } catch (error) {
-      console.error(error);
-      alert("Erro ao salvar alterações.");
-    } finally {
-      setLoading(false);
+      alert("Erro ao salvar.");
     }
+  };
+
+  const updateDay = (index, field, value) => {
+    const newSchedule = [...settings.workSchedule];
+    newSchedule[index] = { ...newSchedule[index], [field]: value };
+    setSettings({ ...settings, workSchedule: newSchedule });
   };
 
   return (
     <div className="settings-container">
-      <h3 className="section-subtitle">Configurações do Estabelecimento</h3>
-      <form onSubmit={handleSave} className="settings-form">
+      <form onSubmit={handleSave}>
         
-        {/* LOGO UPLOAD */}
-        <div className="logo-upload-section">
-          <div className="logo-preview">
-            {preview ? <img src={preview} alt="Logo" /> : <User size={40} color="#cbd5e1"/>}
-          </div>
-          <div className="upload-controls">
-            <label className="btn-upload">
-              <Upload size={18} /> Alterar Logo
-              <input type="file" onChange={handleFileChange} accept="image/*" hidden />
-            </label>
-            <p className="upload-hint">Recomendado: 500x500px (JPG, PNG)</p>
-          </div>
-        </div>
+        <div className="settings-group">
+          <label className="label-bold">Identidade do Negócio</label>
+          
+          <div className="logo-upload-section" style={{marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '20px'}}>
+            <div 
+              className="logo-preview" 
+              style={{
+                width: '100px', height: '100px', borderRadius: '50%', 
+                background: settings.logoUrl ? `url(${settings.logoUrl}) center/cover` : '#f1f5f9',
+                border: '2px dashed #cbd5e1', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                flexShrink: 0
+              }}
+            >
+              {!settings.logoUrl && <Image size={30} color="#94a3b8"/>}
+            </div>
+            
+            <div style={{flex: 1}}>
+              <label style={{display: 'block', marginBottom: '8px', fontWeight: '500', color: '#334155'}}>Logotipo da Empresa</label>
+              
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                onChange={handleImageUpload} 
+                style={{display: 'none'}} 
+                accept="image/*"
+              />
+              
+              <div style={{display: 'flex', gap: '10px'}}>
+                <button 
+                  type="button"
+                  onClick={() => fileInputRef.current.click()}
+                  disabled={uploading}
+                  className="btn-upload"
+                  style={{
+                    background: 'white', border: '1px solid #cbd5e1', padding: '8px 16px', 
+                    borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px',
+                    color: '#1e293b', fontWeight: '600'
+                  }}
+                >
+                  <Upload size={16}/> {uploading ? 'Enviando...' : 'Carregar Imagem'}
+                </button>
 
-        <div className="form-grid">
-          <div className="form-group">
-            <label><User size={16}/> Nome do Negócio</label>
+                {settings.logoUrl && (
+                  <button 
+                    type="button"
+                    onClick={() => setSettings({...settings, logoUrl: ''})}
+                    style={{
+                      background: '#fee2e2', border: 'none', padding: '8px', 
+                      borderRadius: '8px', cursor: 'pointer', color: '#ef4444'
+                    }}
+                    title="Remover Logo"
+                  >
+                    <Trash2 size={18}/>
+                  </button>
+                )}
+              </div>
+              <p className="help-text">Recomendado: JPG ou PNG quadrado (500x500px).</p>
+            </div>
+          </div>
+
+          <div className="input-wrapper" style={{marginBottom: '1rem'}}>
+            <MapPin size={18} className="input-icon" />
             <input 
-              type="text" required 
-              value={formData.companyName} 
-              onChange={e => setFormData({...formData, companyName: e.target.value})}
-              className="input-field"
+              type="text" 
+              placeholder="Endereço Completo (Rua, Número, Bairro)"
+              value={settings.address}
+              onChange={e => setSettings({...settings, address: e.target.value})}
+              className="input-with-icon"
             />
           </div>
 
-          <div className="form-group">
-            <label><Phone size={16}/> WhatsApp (com DDD)</label>
-            <input 
-              type="text" placeholder="(00) 00000-0000"
-              value={formData.whatsapp} 
-              onChange={e => setFormData({...formData, whatsapp: e.target.value})}
-              className="input-field"
-            />
-          </div>
-
-          <div className="form-group span-2">
-            <label><MapPin size={16}/> Endereço Completo</label>
-            <input 
-              type="text" placeholder="Rua, Número, Bairro, Cidade..."
-              value={formData.address} 
-              onChange={e => setFormData({...formData, address: e.target.value})}
-              className="input-field"
-            />
-          </div>
-
-          <div className="form-group span-2">
-            <label><Globe size={16}/> Descrição Curta (Bio)</label>
+          <div className="input-wrapper">
+            <FileText size={18} className="input-icon" style={{top: '20px'}} />
             <textarea 
-              rows="3" placeholder="Fale um pouco sobre seu negócio..."
-              value={formData.description} 
-              onChange={e => setFormData({...formData, description: e.target.value})}
-              className="input-field"
-            />
-          </div>
-
-          <div className="form-group">
-            <label><Clock size={16}/> Abertura</label>
-            <input 
-              type="time" required
-              value={formData.openingTime} 
-              onChange={e => setFormData({...formData, openingTime: e.target.value})}
-              className="input-field"
-            />
-          </div>
-
-          <div className="form-group">
-            <label><Clock size={16}/> Fechamento</label>
-            <input 
-              type="time" required
-              value={formData.closingTime} 
-              onChange={e => setFormData({...formData, closingTime: e.target.value})}
-              className="input-field"
+              placeholder="Descrição curta (Ex: Especialistas em cortes clássicos e barba terapia...)"
+              value={settings.description}
+              onChange={e => setSettings({...settings, description: e.target.value})}
+              className="input-with-icon"
+              style={{height: '80px', paddingLeft: '40px', paddingTop: '10px', resize: 'vertical'}}
             />
           </div>
         </div>
 
-        <div className="form-actions">
-          <button type="submit" className="btn-save" disabled={loading}>
-            {loading ? 'Salvando...' : <><Save size={18}/> Salvar Alterações</>}
-          </button>
+        <hr className="divider" />
+
+        <div className="settings-group">
+          <label className="label-bold">Contato</label>
+          <div className="input-wrapper">
+            <Phone size={18} className="input-icon" />
+            <input 
+              type="text" 
+              placeholder="WhatsApp (DDD + Número)"
+              value={settings.whatsapp}
+              onChange={e => setSettings({...settings, whatsapp: e.target.value})}
+              className="input-with-icon"
+            />
+          </div>
         </div>
+
+        <hr className="divider" />
+
+        <div className="settings-group">
+          <label className="label-bold" style={{display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1rem'}}>
+            <Calendar size={20} /> Horários de Atendimento
+          </label>
+          
+          <div className="schedule-grid">
+            {settings.workSchedule.map((day, index) => (
+              <div key={day.day} className={`day-row ${day.active ? 'active' : 'inactive'}`}>
+                <div className="day-check">
+                  <input 
+                    type="checkbox" 
+                    id={`day-${index}`}
+                    checked={day.active}
+                    onChange={e => updateDay(index, 'active', e.target.checked)}
+                  />
+                  <label htmlFor={`day-${index}`}>{dayNames[day.day]}</label>
+                </div>
+                {day.active ? (
+                  <div className="time-inputs">
+                    <div className="time-field">
+                      <span>Das</span>
+                      <input type="time" value={day.start} onChange={e => updateDay(index, 'start', e.target.value)} />
+                    </div>
+                    <div className="time-field">
+                      <span>Até</span>
+                      <input type="time" value={day.end} onChange={e => updateDay(index, 'end', e.target.value)} />
+                    </div>
+                  </div>
+                ) : (
+                  <span className="closed-badge">Fechado</span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <button type="submit" className="btn-save-settings">
+          <Save size={18} /> Salvar Alterações
+        </button>
       </form>
     </div>
   );

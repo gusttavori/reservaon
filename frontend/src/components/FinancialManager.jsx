@@ -1,24 +1,36 @@
 import { useState, useEffect } from 'react';
-import api from '../services/api'; // Importante
-import { DollarSign, TrendingUp, TrendingDown, Plus, Trash2 } from 'lucide-react';
-import './FinancialManager.css';
+import api from '../services/api';
+import { DollarSign, TrendingUp, TrendingDown, Clock, Plus, Trash2, Wallet } from 'lucide-react';
+import './FinancialManager.css'; 
 
 const FinancialManager = () => {
-  const [transactions, setTransactions] = useState([]);
+  const [stats, setStats] = useState({ 
+    realizedRevenue: 0, 
+    potentialRevenue: 0, 
+    totalExpenses: 0,
+    netProfit: 0,
+    totalAppointments: 0, 
+    history: [],
+    expensesHistory: []
+  });
   const [loading, setLoading] = useState(true);
-  const [summary, setSummary] = useState({ income: 0, expenses: 0, profit: 0 });
-  const [newExpense, setNewExpense] = useState({ description: '', amount: '' });
+  
+  const now = new Date();
+  const [month, setMonth] = useState(now.getMonth() + 1);
+  const [year, setYear] = useState(now.getFullYear());
+
+  const [expenseForm, setExpenseForm] = useState({ description: '', amount: '', date: new Date().toISOString().split('T')[0] });
+  const [showExpenseForm, setShowExpenseForm] = useState(false);
 
   useEffect(() => {
     fetchFinancials();
-  }, []);
+  }, [month, year]);
 
   const fetchFinancials = async () => {
+    setLoading(true);
     try {
-      // Busca lançamentos (receitas vêm dos agendamentos, despesas manuais)
-      const res = await api.get('/api/financial/summary');
-      setSummary(res.data.summary);
-      setTransactions(res.data.transactions);
+      const res = await api.get(`/api/company/financials?month=${month}&year=${year}`);
+      setStats(res.data);
     } catch (error) {
       console.error("Erro financeiro", error);
     } finally {
@@ -28,93 +40,157 @@ const FinancialManager = () => {
 
   const handleAddExpense = async (e) => {
     e.preventDefault();
-    if (!newExpense.description || !newExpense.amount) return;
-
     try {
-      await api.post('/api/financial/expense', {
-        description: newExpense.description,
-        amount: parseFloat(newExpense.amount)
-      });
-      
-      setNewExpense({ description: '', amount: '' });
-      fetchFinancials(); // Recarrega
+      await api.post('/api/company/expenses', expenseForm);
+      alert("Despesa registrada!");
+      setExpenseForm({ description: '', amount: '', date: new Date().toISOString().split('T')[0] });
+      setShowExpenseForm(false);
+      fetchFinancials();
     } catch (error) {
       alert("Erro ao salvar despesa.");
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!confirm("Remover este lançamento?")) return;
+  const handleDeleteExpense = async (id) => {
+    if(!confirm("Remover esta despesa?")) return;
     try {
-      await api.delete(`/api/financial/${id}`);
+      await api.delete(`/api/company/expenses/${id}`);
       fetchFinancials();
     } catch (error) {
-      alert("Erro ao excluir.");
+      alert("Erro ao deletar.");
     }
   };
 
-  if (loading) return <p>Carregando financeiro...</p>;
-
   return (
     <div className="financial-container">
-      {/* Cards de Resumo */}
-      <div className="financial-cards">
-        <div className="fin-card income">
-          <div className="fin-icon"><TrendingUp size={24}/></div>
-          <div><p>Receitas</p><h3>R$ {summary.income.toFixed(2)}</h3></div>
+      
+      <div className="financial-header">
+        <div className="filters">
+          <select value={month} onChange={e => setMonth(e.target.value)} className="select-custom">
+            {Array.from({length: 12}, (_, i) => (
+              <option key={i+1} value={i+1}>{new Date(0, i).toLocaleString('pt-BR', {month: 'long'})}</option>
+            ))}
+          </select>
+          <select value={year} onChange={e => setYear(e.target.value)} className="select-custom">
+            <option value="2025">2025</option>
+            <option value="2026">2026</option>
+          </select>
         </div>
-        <div className="fin-card expense">
-          <div className="fin-icon"><TrendingDown size={24}/></div>
-          <div><p>Despesas</p><h3>R$ {summary.expenses.toFixed(2)}</h3></div>
+        
+        <button 
+          onClick={() => setShowExpenseForm(!showExpenseForm)}
+          className="btn-expense"
+        >
+          <Plus size={18} /> Registrar Saída
+        </button>
+      </div>
+
+      {showExpenseForm && (
+        <div className="expense-form-container">
+          <h4 className="form-title">Nova Despesa / Custo</h4>
+          <form onSubmit={handleAddExpense} className="expense-form">
+            <div className="form-group grow">
+              <label className="input-label">Descrição</label>
+              <input 
+                type="text" required placeholder="Ex: Aluguel, Luz, Produtos..." 
+                value={expenseForm.description} onChange={e => setExpenseForm({...expenseForm, description: e.target.value})}
+                className="input-field"
+              />
+            </div>
+            <div className="form-group normal">
+              <label className="input-label">Valor (R$)</label>
+              <input 
+                type="number" step="0.01" required placeholder="0,00" 
+                value={expenseForm.amount} onChange={e => setExpenseForm({...expenseForm, amount: e.target.value})}
+                className="input-field"
+              />
+            </div>
+            <div className="form-group normal">
+              <label className="input-label">Data</label>
+              <input 
+                type="date" required 
+                value={expenseForm.date} onChange={e => setExpenseForm({...expenseForm, date: e.target.value})}
+                className="input-field"
+              />
+            </div>
+            <button type="submit" className="btn-save">
+              Salvar
+            </button>
+          </form>
         </div>
-        <div className="fin-card profit">
-          <div className="fin-icon"><DollarSign size={24}/></div>
-          <div><p>Lucro Líquido</p><h3>R$ {summary.profit.toFixed(2)}</h3></div>
+      )}
+
+      <div className="stats-grid">
+        <div className="stat-card green">
+          <div className="icon-box"><TrendingUp size={24} /></div>
+          <div className="stat-info">
+            <h4>Entradas (Recebido)</h4>
+            <p className="stat-value">R$ {stats.realizedRevenue.toFixed(2).replace('.', ',')}</p>
+          </div>
+        </div>
+        <div className="stat-card red">
+          <div className="icon-box"><TrendingDown size={24} /></div>
+          <div className="stat-info">
+            <h4>Saídas (Despesas)</h4>
+            <p className="stat-value">- R$ {stats.totalExpenses.toFixed(2).replace('.', ',')}</p>
+          </div>
+        </div>
+        <div className="stat-card blue">
+          <div className="icon-box"><Wallet size={24} /></div>
+          <div className="stat-info">
+            <h4>Lucro Líquido</h4>
+            <p className="stat-value">R$ {stats.netProfit.toFixed(2).replace('.', ',')}</p>
+          </div>
+        </div>
+        <div className="stat-card orange">
+          <div className="icon-box"><Clock size={24} /></div>
+          <div className="stat-info">
+            <h4>Previsão (A Receber)</h4>
+            <p className="stat-value">R$ {stats.potentialRevenue.toFixed(2).replace('.', ',')}</p>
+          </div>
         </div>
       </div>
 
-      <div className="financial-grid">
-        {/* Formulário de Despesa */}
-        <div className="expense-form-card">
-          <h4>Registrar Despesa</h4>
-          <form onSubmit={handleAddExpense}>
-            <input 
-              type="text" placeholder="Descrição (ex: Luz, Água)" 
-              className="fin-input" required
-              value={newExpense.description} onChange={e => setNewExpense({...newExpense, description: e.target.value})}
-            />
-            <input 
-              type="number" placeholder="Valor (R$)" 
-              className="fin-input" required
-              value={newExpense.amount} onChange={e => setNewExpense({...newExpense, amount: e.target.value})}
-            />
-            <button type="submit" className="btn-add-expense"><Plus size={18}/> Adicionar</button>
-          </form>
+      <div className="transactions-grid">
+        <div>
+          <h3 className="list-header">Últimas Entradas</h3>
+          <div className="transaction-list">
+            {stats.history.length === 0 ? (
+              <div className="empty-state">Sem entradas neste mês.</div>
+            ) : (
+              stats.history.slice(0, 5).map(item => (
+                <div key={item.id} className={`transaction-item income ${item.status !== 'COMPLETED' ? 'pending' : ''}`}>
+                  <div className="t-info">
+                    <strong>{item.service.name} {item.status === 'COMPLETED' ? '' : '(Pendente)'}</strong>
+                    <span>{new Date(item.date).toLocaleDateString('pt-BR')} • {item.customerName}</span>
+                  </div>
+                  <div className="t-amount">+ R$ {Number(item.service.price).toFixed(2)}</div>
+                </div>
+              ))
+            )}
+          </div>
         </div>
 
-        {/* Lista de Transações */}
-        <div className="transactions-list">
-          <h4>Últimos Lançamentos</h4>
-          {transactions.length === 0 ? <p className="empty-text">Sem movimentações.</p> : (
-            <ul>
-              {transactions.map(t => (
-                <li key={t.id} className={`trans-item ${t.type}`}>
-                  <div className="trans-info">
-                    <span className="trans-desc">{t.description}</span>
-                    <span className="trans-date">{new Date(t.date).toLocaleDateString()}</span>
+        <div>
+          <h3 className="list-header">Últimas Despesas</h3>
+          <div className="transaction-list">
+            {stats.expensesHistory.length === 0 ? (
+              <div className="empty-state">Sem despesas registradas.</div>
+            ) : (
+              stats.expensesHistory.map(item => (
+                <div key={item.id} className="transaction-item expense">
+                  <div className="t-info">
+                    <strong>{item.description}</strong>
+                    <span>{new Date(item.date).toLocaleDateString('pt-BR')}</span>
                   </div>
-                  <div className="trans-val-box">
-                    <span className="trans-val">
-                      {t.type === 'expense' ? '-' : '+'} R$ {Number(t.amount).toFixed(2)}
-                    </span>
-                    {t.type === 'expense' && (
-                      <button onClick={() => handleDelete(t.id)} className="btn-del-mini"><Trash2 size={14}/></button>
-                    )}
+                  <div style={{display: 'flex', alignItems: 'center'}}>
+                    <span className="t-amount">- R$ {Number(item.amount).toFixed(2)}</span>
+                    <button onClick={() => handleDeleteExpense(item.id)} className="btn-delete" title="Remover"><Trash2 size={16} /></button>
                   </div>
-                </li>
-              ))}
-            </ul>
-          )}
+                </div>
+              ))
+            )}
+          </div>
         </div>
       </div>
     </div>

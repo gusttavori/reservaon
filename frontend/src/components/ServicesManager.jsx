@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../services/api';
 import { Trash2, Plus, X, Clock, DollarSign } from 'lucide-react';
 import './ServicesManager.css';
 
 const ServicesManager = () => {
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false); // Controla a caixa flutuante
+  const [showModal, setShowModal] = useState(false);
 
   const [newService, setNewService] = useState({
     name: '',
@@ -21,10 +21,7 @@ const ServicesManager = () => {
 
   const fetchServices = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const res = await axios.get('http://localhost:3000/api/services', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await api.get('/api/services');
       setServices(res.data);
     } catch (error) {
       console.error("Erro ao buscar serviços");
@@ -36,14 +33,11 @@ const ServicesManager = () => {
   const handleCreate = async (e) => {
     e.preventDefault();
     try {
-      const token = localStorage.getItem('token');
-      await axios.post('http://localhost:3000/api/services', newService, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await api.post('/api/services', newService);
       
       alert("Serviço criado com sucesso!");
       setNewService({ name: '', price: '', duration: '', bufferTime: '' });
-      setShowModal(false); // Fecha o modal após criar
+      setShowModal(false); 
       fetchServices();
     } catch (error) {
       alert("Erro ao criar serviço.");
@@ -53,10 +47,7 @@ const ServicesManager = () => {
   const handleDelete = async (id) => {
     if (!confirm("Tem certeza que deseja excluir este serviço?")) return;
     try {
-      const token = localStorage.getItem('token');
-      await axios.delete(`http://localhost:3000/api/services/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await api.delete(`/api/services/${id}`);
       fetchServices();
     } catch (error) {
       alert("Erro ao deletar.");
@@ -67,8 +58,6 @@ const ServicesManager = () => {
 
   return (
     <div className="services-container">
-      
-      {/* CABEÇALHO COM BOTÃO DE ADICIONAR */}
       <div className="services-header-row">
         <div>
           <h3 className="section-subtitle">Catálogo de Serviços</h3>
@@ -79,7 +68,6 @@ const ServicesManager = () => {
         </button>
       </div>
 
-      {/* LISTA DE SERVIÇOS (Agora ocupa a largura total) */}
       <div className="services-list-full">
         {services.length === 0 ? (
           <div className="empty-state">
@@ -119,7 +107,6 @@ const ServicesManager = () => {
         )}
       </div>
 
-      {/* MODAL / CAIXA FLUTUANTE */}
       {showModal && (
         <div className="modal-overlay">
           <div className="modal-content animate-pop-in">
@@ -134,68 +121,46 @@ const ServicesManager = () => {
               <div className="form-group">
                 <label>Nome do Serviço</label>
                 <input 
-                  type="text" 
-                  placeholder="Ex: Corte Degradê"
-                  required
-                  value={newService.name}
-                  onChange={e => setNewService({...newService, name: e.target.value})}
+                  type="text" placeholder="Ex: Corte Degradê" required
+                  value={newService.name} onChange={e => setNewService({...newService, name: e.target.value})}
                   className="input-field"
                 />
               </div>
-
               <div className="form-row">
                 <div className="form-group">
                   <label>Preço (R$)</label>
                   <input 
-                    type="number" 
-                    placeholder="0.00"
-                    required
-                    value={newService.price}
-                    onChange={e => setNewService({...newService, price: e.target.value})}
+                    type="number" placeholder="0.00" required
+                    value={newService.price} onChange={e => setNewService({...newService, price: e.target.value})}
                     className="input-field"
                   />
                 </div>
-
                 <div className="form-group">
                   <label>Duração (minutos)</label>
                   <input 
-                    type="number" 
-                    placeholder="30"
-                    required
-                    value={newService.duration}
-                    onChange={e => setNewService({...newService, duration: e.target.value})}
+                    type="number" placeholder="30" required
+                    value={newService.duration} onChange={e => setNewService({...newService, duration: e.target.value})}
                     className="input-field"
                   />
                 </div>
               </div>
-
               <div className="buffer-section">
-                <label className="buffer-label">
-                  ⏳ Intervalo Pós-Atendimento (Opcional)
-                </label>
+                <label className="buffer-label">⏳ Intervalo Pós-Atendimento (Opcional)</label>
                 <input 
-                  type="number" 
-                  placeholder="Ex: 10 (minutos de limpeza)"
-                  value={newService.bufferTime}
-                  onChange={e => setNewService({...newService, bufferTime: e.target.value})}
+                  type="number" placeholder="Ex: 10 (minutos de limpeza)"
+                  value={newService.bufferTime} onChange={e => setNewService({...newService, bufferTime: e.target.value})}
                   className="input-field"
                 />
                 <p className="help-text">Tempo extra bloqueado na agenda após o serviço.</p>
               </div>
-
               <div className="modal-actions">
-                <button type="button" className="btn-cancel" onClick={() => setShowModal(false)}>
-                  Cancelar
-                </button>
-                <button type="submit" className="btn-confirm-add">
-                  Adicionar Serviço
-                </button>
+                <button type="button" className="btn-cancel" onClick={() => setShowModal(false)}>Cancelar</button>
+                <button type="submit" className="btn-confirm-add">Adicionar Serviço</button>
               </div>
             </form>
           </div>
         </div>
       )}
-
     </div>
   );
 };
