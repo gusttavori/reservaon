@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Search, Calendar } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
+import api from '../services/api';
 import './CatalogPreview.css';
 
 const CatalogPreview = () => {
@@ -10,7 +10,7 @@ const CatalogPreview = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    axios.get('http://localhost:3000/api/public/companies')
+    api.get('/api/public/companies')
       .then(response => {
         setCompanies(response.data);
       })

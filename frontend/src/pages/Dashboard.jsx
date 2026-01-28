@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import axios from 'axios';
+import api from '../services/api';
 import { 
   LayoutDashboard, Calendar, Settings, LogOut, Copy, ExternalLink, Scissors, Users, DollarSign, Briefcase, Lock, Contact, Zap, List, Star, BarChart2, ShieldCheck 
 } from 'lucide-react';
@@ -49,18 +49,16 @@ const Dashboard = () => {
       }
 
       if (isActive) {
-        fetchStats(token);
+        fetchStats();
       }
     };
 
     fetchUserData();
   }, [navigate, searchParams, isActive]);
 
-  const fetchStats = async (token) => {
+  const fetchStats = async () => {
     try {
-      const res = await axios.get('http://localhost:3000/api/dashboard/stats', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await api.get('/api/dashboard/stats');
       setStats(res.data);
     } catch (error) {
       console.error("Erro ao carregar métricas");
@@ -74,10 +72,7 @@ const Dashboard = () => {
 
   const handleSubscribe = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const res = await axios.post('http://localhost:3000/api/payment/create-checkout', {}, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const res = await api.post('/api/payment/create-checkout');
       window.location.href = res.data.url;
     } catch (error) {
       alert("Erro ao iniciar pagamento.");

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../services/api';
 import { Calendar, Phone, Plus, X, Scissors, User, ChevronDown } from 'lucide-react';
 import DatePicker, { registerLocale } from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -28,12 +28,9 @@ const AppointmentsList = () => {
 
   const fetchData = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const headers = { Authorization: `Bearer ${token}` };
-      
       const [resApp, resServ] = await Promise.all([
-        axios.get('http://localhost:3000/api/appointments', { headers }),
-        axios.get('http://localhost:3000/api/services', { headers })
+        api.get('/api/appointments'),
+        api.get('/api/services')
       ]);
 
       setAppointments(resApp.data);
@@ -52,11 +49,7 @@ const AppointmentsList = () => {
     ));
 
     try {
-      const token = localStorage.getItem('token');
-      await axios.put(`http://localhost:3000/api/appointments/${id}/status`, 
-        { status: newStatus },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await api.put(`/api/appointments/${id}/status`, { status: newStatus });
     } catch (error) {
       alert("Erro ao atualizar status.");
       setAppointments(oldAppointments);
@@ -66,16 +59,12 @@ const AppointmentsList = () => {
   const handleManualBooking = async (e) => {
     e.preventDefault();
     try {
-      const token = localStorage.getItem('token');
-      await axios.post('http://localhost:3000/api/appointments/internal', 
-        {
-          customerName: formData.customerName,
-          customerPhone: formData.customerPhone,
-          serviceId: formData.serviceId,
-          date: formData.date
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await api.post('/api/appointments/internal', {
+        customerName: formData.customerName,
+        customerPhone: formData.customerPhone,
+        serviceId: formData.serviceId,
+        date: formData.date
+      });
       
       alert("Agendamento criado!");
       setShowModal(false);

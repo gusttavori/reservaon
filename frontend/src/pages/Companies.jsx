@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
-import { Search, MapPin, Star, Filter, Calendar, Map } from 'lucide-react'; // Adicionei Map
+import api from '../services/api';
+import { Search, MapPin, Star, Filter, Calendar, Map } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import './Companies.css';
 
@@ -14,7 +14,7 @@ const Companies = () => {
   const [selectedCategory, setSelectedCategory] = useState("Todos");
 
   useEffect(() => {
-    axios.get('http://localhost:3000/api/public/companies')
+    api.get('/api/public/companies')
       .then(response => {
         setCompanies(response.data);
       })
@@ -52,9 +52,9 @@ const Companies = () => {
                     name="category" 
                     checked={selectedCategory === cat}
                     onChange={() => setSelectedCategory(cat)}
-                    className="hidden-radio" // Vamos esconder a bolinha padrão
+                    className="hidden-radio" 
                   />
-                  <span className="radio-custom"></span> {/* Bolinha personalizada */}
+                  <span className="radio-custom"></span> 
                   <span className="category-text">{cat}</span>
                 </label>
               ))}
@@ -76,7 +76,7 @@ const Companies = () => {
 
         </aside>
 
-        {/* ÁREA DE RESULTADOS (Mantida igual, apenas contexto) */}
+        {/* ÁREA DE RESULTADOS */}
         <section className="results-area">
           <div className="results-header">
             <div>

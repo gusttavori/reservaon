@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import axios from 'axios';
+import api from '../services/api';
 import { Clock, DollarSign, MessageCircle, MapPin, List, Star } from 'lucide-react';
 import DatePicker, { registerLocale } from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -36,7 +36,7 @@ const BookingPage = () => {
   useEffect(() => {
     const fetchCompanyData = async () => {
       try {
-        const response = await axios.get(`http://localhost:3000/api/public/${slug}`);
+        const response = await api.get(`/api/public/${slug}`);
         setCompany(response.data);
       } catch (err) {
         console.error(err);
@@ -50,7 +50,7 @@ const BookingPage = () => {
   // Busca Reviews Públicos
   useEffect(() => {
     if (slug) {
-      axios.get(`http://localhost:3000/api/reviews/public/${slug}`)
+      api.get(`/api/reviews/public/${slug}`)
         .then(res => setReviewsData({ average: res.data.average || 0, total: res.data.total || 0 }))
         .catch(err => console.error("Sem reviews"));
     }
@@ -124,7 +124,7 @@ const BookingPage = () => {
     }
     setSubmitting(true);
     try {
-      await axios.post('http://localhost:3000/api/appointments/public', {
+      await api.post('/api/appointments/public', {
         date: startDate,
         customerName: formData.customerName,
         customerPhone: formData.customerPhone,
@@ -152,7 +152,7 @@ const BookingPage = () => {
   const handleJoinWaitingList = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:3000/api/waiting-list/public', {
+      await api.post('/api/waiting-list/public', {
         companyId: company.id,
         customerName: waitingData.name,
         phone: waitingData.phone,
@@ -170,7 +170,7 @@ const BookingPage = () => {
   const handleSubmitReview = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:3000/api/reviews/public', {
+      await api.post('/api/reviews/public', {
         companyId: company.id,
         rating: newReview.rating,
         comment: newReview.comment,
@@ -212,7 +212,7 @@ const BookingPage = () => {
         
         <h1 style={{fontSize: '1.8rem', marginBottom: '0.5rem'}}>{company.name}</h1>
         
-        {/* ESTRELAS DE AVALIAÇÃO - SÓ APARECE SE FOR PLANO AVANÇADO/PREMIUM E TIVER REVIEWS */}
+        {/* ESTRELAS DE AVALIAÇÃO */}
         {canReceiveReviews && (
           <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', marginBottom: '1rem', cursor: 'pointer'}} onClick={() => setShowReviewModal(true)}>
             <div style={{display: 'flex'}}>
@@ -288,7 +288,7 @@ const BookingPage = () => {
           </button>
         </div>
 
-        {/* BOTÃO AVALIAR - SÓ APARECE SE FOR PLANO AVANÇADO/PREMIUM */}
+        {/* BOTÃO AVALIAR */}
         {canReceiveReviews && (
           <div style={{textAlign: 'center', marginTop: '1rem', paddingBottom: '2rem'}}>
             <button 
@@ -399,7 +399,7 @@ const BookingPage = () => {
         </div>
       )}
 
-      {/* MODAL DE AVALIAÇÃO - PROTEGIDO LOGICAMENTE */}
+      {/* MODAL DE AVALIAÇÃO */}
       {showReviewModal && canReceiveReviews && (
         <div className="modal-overlay">
           <div className="modal-content">

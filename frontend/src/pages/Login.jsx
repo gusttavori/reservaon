@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../services/api';
 import { Mail, Lock, ArrowLeft, ArrowRight } from 'lucide-react';
-import logoImg from '../assets/reservaon.png'; // <--- Importe a imagem aqui
+import logoImg from '../assets/reservaon.png'; 
 import './Login.css';
 
 const Login = () => {
@@ -22,7 +22,7 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      const response = await axios.post('http://localhost:3000/api/auth/login', {
+      const response = await api.post('/api/auth/login', {
         email: formData.email,
         password: formData.password
       });
@@ -45,7 +45,6 @@ const Login = () => {
     <div className="login-container">
       <div className="login-banner">
         <div className="banner-content">
-          {/* SUBSTITUÍDO O TEXTO PELA IMAGEM */}
           <img src={logoImg} alt="ReservaON" className="login-logo" />
         </div>
         <div className="banner-content">
