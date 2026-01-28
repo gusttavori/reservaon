@@ -20,7 +20,10 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [user, setUser] = useState(null);
-  const [isActive, setIsActive] = useState(true);
+  
+  // CORREÇÃO: Inicia como false para bloquear por padrão até verificar
+  const [isActive, setIsActive] = useState(false);
+  
   const [activeTab, setActiveTab] = useState('overview'); 
   const [stats, setStats] = useState({ appointmentsToday: 0, totalRevenue: 0, uniqueClients: 0 });
 
@@ -37,24 +40,27 @@ const Dashboard = () => {
       const userData = JSON.parse(storedUser);
       setUser(userData);
 
-      if (userData.subscriptionStatus && userData.subscriptionStatus !== 'ACTIVE') {
+      // LÓGICA DE ASSINATURA CORRIGIDA
+      // Só ativa se o status for explicitamente 'ACTIVE'
+      if (userData.subscriptionStatus === 'ACTIVE') {
+        setIsActive(true);
+        fetchStats();
+      } else {
         setIsActive(false);
       }
       
+      // Se voltou do Stripe com sucesso, ativa manual e salva
       if (searchParams.get('success')) {
         setIsActive(true);
         userData.subscriptionStatus = 'ACTIVE';
         localStorage.setItem('user', JSON.stringify(userData));
         navigate('/dashboard', { replace: true });
-      }
-
-      if (isActive) {
         fetchStats();
       }
     };
 
     fetchUserData();
-  }, [navigate, searchParams, isActive]);
+  }, [navigate, searchParams]);
 
   const fetchStats = async () => {
     try {
@@ -72,10 +78,13 @@ const Dashboard = () => {
 
   const handleSubscribe = async () => {
     try {
+      // Usa a instância 'api' para garantir a URL certa
       const res = await api.post('/api/payment/create-checkout');
+      // Redireciona para o Stripe
       window.location.href = res.data.url;
     } catch (error) {
-      alert("Erro ao iniciar pagamento.");
+      console.error(error);
+      alert("Erro ao iniciar pagamento. Verifique se o Backend está configurado com as chaves do Stripe.");
     }
   };
 
@@ -106,6 +115,7 @@ const Dashboard = () => {
     return labels[slug] || 'Plano';
   };
 
+  // TELA DE BLOQUEIO (SE NÃO TIVER ASSINATURA ATIVA)
   if (!isActive) {
     return (
       <div className="dashboard-layout" style={{justifyContent: 'center', alignItems: 'center'}}>
@@ -122,7 +132,7 @@ const Dashboard = () => {
           </button>
           <div style={{marginTop: '1rem'}}>
              <button onClick={handleLogout} style={{background: 'transparent', border: 'none', color: '#64748b', cursor: 'pointer', textDecoration: 'underline', padding: 0}}>
-               Sair
+               Sair e voltar ao Login
              </button>
           </div>
         </div>
