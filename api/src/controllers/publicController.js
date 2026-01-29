@@ -7,10 +7,12 @@ exports.getCompanies = async (req, res) => {
   try {
     const companies = await prisma.company.findMany({
       where: {
-        active: true,
+        // Se você não tiver certeza se as empresas estão 'active', 
+        // comente a linha abaixo para testar:
+        active: true, 
         name: {
           contains: search || '',
-          mode: 'insensitive' // Busca sem diferenciar maiúsculas/minúsculas
+          mode: 'insensitive'
         }
       },
       include: {
@@ -26,8 +28,10 @@ exports.getCompanies = async (req, res) => {
       const sumRatings = company.reviews.reduce((acc, r) => acc + r.rating, 0);
       const averageRating = totalReviews > 0 ? (sumRatings / totalReviews) : 0;
 
-      // Verifica se o plano permite exibir avaliações (Avançado ou Premium)
-      const showRating = company.plan && ['avancado', 'premium'].includes(company.plan.slug.toLowerCase());
+      // CORREÇÃO DE SEGURANÇA: Uso de optional chaining (?.)
+      // Evita erro 500 se a empresa não tiver plano
+      const planSlug = company.plan?.slug?.toLowerCase() || 'basico';
+      const showRating = ['avancado', 'premium'].includes(planSlug);
 
       return {
         id: company.id,
@@ -36,17 +40,19 @@ exports.getCompanies = async (req, res) => {
         logoUrl: company.logoUrl,
         address: company.address,
         description: company.description,
+        // Retorna a média apenas se o plano permitir
         averageRating: showRating ? averageRating : null,
         totalReviews: showRating ? totalReviews : null,
-        // Campos auxiliares para o card
         openingTime: company.openingTime,
-        closingTime: company.closingTime
+        closingTime: company.closingTime,
+        category: company.category // Útil para filtros
       };
     });
 
     res.json(formattedCompanies);
   } catch (error) {
     console.error("Erro ao buscar empresas:", error);
+    // Retorna array vazio em vez de erro se a tabela não existir ainda (opcional)
     res.status(500).json({ error: "Erro ao buscar empresas." });
   }
 };
@@ -59,13 +65,13 @@ exports.getCompanyBySlug = async (req, res) => {
       include: {
         services: true,
         plan: true,
-        // Incluir workSchedule e outros dados necessários
+        workSchedule: true, // Importante para o BookingPage
+        reviews: true       // Se quiser exibir reviews na página interna
       }
     });
 
     if (!company) return res.status(404).json({ error: "Empresa não encontrada" });
 
-    // Pode remover dados sensíveis aqui se necessário, mas para agendamento precisamos da maioria
     res.json(company);
   } catch (error) {
     console.error(error);
