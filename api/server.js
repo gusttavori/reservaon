@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 
+// Importação das Rotas
 const authRoutes = require('./src/routes/authRoutes'); 
 const serviceRoutes = require('./src/routes/serviceRoutes');
 const publicRoutes = require('./src/routes/publicRoutes');
@@ -15,11 +16,21 @@ const reviewRoutes = require('./src/routes/reviewRoutes');
 const analyticsRoutes = require('./src/routes/analyticsRoutes');
 const logRoutes = require('./src/routes/logRoutes');
 const uploadRoutes = require('./src/routes/uploadRoutes');
+
 const webhookController = require('./src/controllers/webhookController');
 
 const app = express();
 
-app.use(cors());
+app.use(cors({
+  origin: [
+    'https://reservaon.vercel.app',   // Seu Frontend em Produção
+    'http://localhost:5173',          // Seu Frontend Local (Vite)
+    'http://localhost:3000'           // Seu Backend Local
+  ],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  credentials: true // Permite cookies/sessões se necessário
+}));
 
 app.post('/api/webhook', express.raw({ type: 'application/json' }), webhookController.handleWebhook);
 
@@ -40,7 +51,11 @@ app.use('/api/logs', logRoutes);
 app.use('/api/upload', uploadRoutes);
 
 app.get('/', (req, res) => {
-  res.json({ status: "API Online 🚀", message: "Bem-vindo ao Backend do ReservaON" });
+  res.json({ 
+    status: "API Online 🚀", 
+    message: "Bem-vindo ao Backend do ReservaON",
+    timestamp: new Date()
+  });
 });
 
 const PORT = process.env.PORT || 3000;
