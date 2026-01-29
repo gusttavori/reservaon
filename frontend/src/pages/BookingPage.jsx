@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import api from '../services/api'; // <--- IMPORTANTE: Usar a instância configurada
+import api from '../services/api';
 import { Clock, DollarSign, MessageCircle, MapPin, List, Star } from 'lucide-react';
 import DatePicker, { registerLocale } from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -36,7 +36,6 @@ const BookingPage = () => {
   useEffect(() => {
     const fetchCompanyData = async () => {
       try {
-        // CORREÇÃO: Usando api.get para conectar no Render
         const response = await api.get(`/api/public/${slug}`);
         setCompany(response.data);
       } catch (err) {
@@ -124,24 +123,31 @@ const BookingPage = () => {
       return;
     }
     setSubmitting(true);
+    
     try {
-      // CORREÇÃO: Usando api.post
-      await api.post('/api/appointments/public', {
+      // CORREÇÃO: URL correta e mapeamento de campos (customerName -> clientName)
+      await api.post('/api/public/appointments', {
         date: startDate,
-        customerName: formData.customerName,
-        customerPhone: formData.customerPhone,
+        clientName: formData.customerName,   // Backend espera clientName
+        clientPhone: formData.customerPhone, // Backend espera clientPhone
         serviceId: selectedService.id,
-        companyId: company.id
+        companyId: company.id,
+        notes: "Agendamento pelo Site"
       });
+
       alert("Agendamento realizado! Vamos confirmar no WhatsApp? 📲");
-      setSelectedService(null);
+      
+      const savedDate = new Date(startDate);
+      
       if (company.whatsapp) {
         const cleanPhone = company.whatsapp.replace(/\D/g, '');
-        const dateStr = format(startDate, "dd/MM 'às' HH:mm");
+        const dateStr = format(savedDate, "dd/MM 'às' HH:mm");
         const message = `Olá! Sou *${formData.customerName}*. \nAcabei de agendar *${selectedService.name}* para *${dateStr}*. \nPode confirmar?`;
         const link = `https://wa.me/55${cleanPhone}?text=${encodeURIComponent(message)}`;
         window.open(link, '_blank');
       }
+      
+      setSelectedService(null);
     } catch (error) {
       console.error(error);
       const msg = error.response?.data?.error || "Erro ao realizar agendamento.";
@@ -201,8 +207,6 @@ const BookingPage = () => {
   if (!company) return <div className="loading-screen">Empresa não encontrada.</div>;
 
   const isBasicPlan = company.plan?.slug?.toLowerCase() === 'basico';
-  
-  // VERIFICAÇÃO DE PLANO PARA PERMITIR AVALIAÇÃO
   const canReceiveReviews = company.plan && ['avancado', 'premium'].includes(company.plan.slug.toLowerCase());
 
   return (
@@ -214,7 +218,6 @@ const BookingPage = () => {
         
         <h1 style={{fontSize: '1.8rem', marginBottom: '0.5rem'}}>{company.name}</h1>
         
-        {/* ESTRELAS DE AVALIAÇÃO */}
         {canReceiveReviews && (
           <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', marginBottom: '1rem', cursor: 'pointer'}} onClick={() => setShowReviewModal(true)}>
             <div style={{display: 'flex'}}>

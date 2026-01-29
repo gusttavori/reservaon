@@ -1,10 +1,9 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-// GET: Catálogo de Empresas
+// GET: Catálogo
 exports.getCompanies = async (req, res) => {
   const { search } = req.query;
-
   try {
     const companies = await prisma.company.findMany({
       where: {
@@ -39,29 +38,22 @@ exports.getCompanies = async (req, res) => {
         category: company.category
       };
     });
-
     res.json(formattedCompanies);
   } catch (error) {
     console.error("Erro catálogo:", error);
-    res.json([]); 
+    res.json([]);
   }
 };
 
-// GET: Empresa pelo Slug
+// GET: Empresa por Slug
 exports.getCompanyBySlug = async (req, res) => {
   const { slug } = req.params;
   try {
     const company = await prisma.company.findUnique({
       where: { slug },
-      include: {
-        services: true,
-        plan: true,
-        reviews: true 
-      }
+      include: { services: true, plan: true, reviews: true }
     });
-
     if (!company) return res.status(404).json({ error: "Empresa não encontrada" });
-
     res.json(company);
   } catch (error) {
     console.error("Erro slug:", error);
@@ -69,12 +61,13 @@ exports.getCompanyBySlug = async (req, res) => {
   }
 };
 
-// POST: Criar Agendamento (CORRIGIDO: Sem validação de fuso horário)
+// POST: Criar Agendamento (A função que será chamada)
 exports.createAppointment = async (req, res) => {
   try {
+    console.log("Recebendo agendamento:", req.body); // Log para debug no Render
+
     const { companyId, serviceId, date, clientName, clientPhone, notes } = req.body;
 
-    // Apenas checa se os dados existem, não checa o horário (deixa o frontend controlar)
     if (!companyId || !serviceId || !date || !clientName || !clientPhone) {
       return res.status(400).json({ error: "Preencha todos os campos." });
     }
@@ -83,17 +76,17 @@ exports.createAppointment = async (req, res) => {
       data: {
         companyId,
         serviceId,
-        date: new Date(date), // Salva a data exata que veio do frontend
-        clientName,  
-        clientPhone, 
+        date: new Date(date),
+        clientName,
+        clientPhone,
         notes,
-        status: 'PENDING' 
+        status: 'PENDING'
       }
     });
 
     res.status(201).json(appointment);
   } catch (error) {
-    console.error("Erro agendamento:", error);
-    res.status(500).json({ error: "Erro ao criar agendamento." });
+    console.error("Erro ao criar agendamento:", error);
+    res.status(500).json({ error: "Erro interno ao salvar agendamento." });
   }
 };
