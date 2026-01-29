@@ -63,32 +63,36 @@ exports.updateSettings = async (req, res) => {
 
 // --- FINANCEIRO (CORRIGIDO) ---
 
+// ... (mantenha os imports e outras funções iguais)
+
 exports.getFinancialStats = async (req, res) => {
   try {
-    if (!req.userId) return res.status(401).json({ error: "Usuário não autenticado." });
+    // LOG DE DEBUG: Verificar quem está chamando
+    console.log("🔍 FinancialStats: Iniciando. req.userId recebido:", req.userId);
 
-    // 1. Converter params para Inteiros
-    const month = parseInt(req.query.month);
-    const year = parseInt(req.query.year);
-
-    if (!month || !year) {
-      return res.status(400).json({ error: "Mês e Ano são obrigatórios." });
+    if (!req.userId) {
+      console.log("🔴 FinancialStats: req.userId veio vazio! Retornando 401.");
+      return res.status(401).json({ error: "Usuário não autenticado no Controller." });
     }
 
-    // CORREÇÃO: findFirst em vez de findUnique
+    const { month, year } = req.query;
+    if (!month || !year) return res.status(400).json({ error: "Mês e Ano obrigatórios." });
+
+    // Busca usando findFirst para evitar erros de schema
     const company = await prisma.company.findFirst({ 
       where: { userId: req.userId } 
     });
     
-    if (!company) return res.status(404).json({ error: "Empresa não encontrada" });
+    if (!company) {
+      console.log("🔴 FinancialStats: Empresa não encontrada para o user:", req.userId);
+      return res.status(404).json({ error: "Empresa não encontrada" });
+    }
 
-    // 2. Definir intervalo de datas
-    const startDate = new Date(year, month - 1, 1);
-    const endDate = new Date(year, month, 0, 23, 59, 59, 999);
+    // Datas
+    const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
+    const endDate = new Date(parseInt(year), parseInt(month), 0, 23, 59, 59, 999);
 
-    console.log(`Buscando financeiro: Empresa ${company.id} | ${startDate.toISOString()} até ${endDate.toISOString()}`);
-
-    // 3. Buscar Agendamentos
+    // Agendamentos
     const appointments = await prisma.appointment.findMany({
       where: {
         companyId: company.id,
@@ -99,7 +103,7 @@ exports.getFinancialStats = async (req, res) => {
       orderBy: { date: 'desc' }
     });
 
-    // 4. Buscar Despesas
+    // Despesas (Blindado)
     let expenses = [];
     try {
       expenses = await prisma.expense.findMany({
@@ -110,32 +114,25 @@ exports.getFinancialStats = async (req, res) => {
         orderBy: { date: 'desc' }
       });
     } catch (dbError) {
-      console.error("ERRO CRÍTICO NO PRISMA EXPENSE:", dbError);
+      console.error("⚠️ Erro ao buscar despesas (tabela existe?):", dbError.message);
       expenses = []; 
     }
 
-    // 5. Cálculos
+    // Cálculos
     let realizedRevenue = 0;
     let potentialRevenue = 0;
-    let totalExpenses = 0;
+    let totalExpenses = expenses.reduce((acc, curr) => acc + Number(curr.amount), 0);
 
     const history = appointments.map(app => {
       const price = Number(app.service.price);
-      if (['COMPLETED', 'CONFIRMED'].includes(app.status)) {
-        realizedRevenue += price;
-      } else {
-        potentialRevenue += price;
-      }
+      if (['COMPLETED', 'CONFIRMED'].includes(app.status)) realizedRevenue += price;
+      else potentialRevenue += price;
       return app;
-    });
-
-    expenses.forEach(exp => {
-      totalExpenses += Number(exp.amount);
     });
 
     const netProfit = realizedRevenue - totalExpenses;
 
-    return res.json({
+    res.json({
       realizedRevenue,
       potentialRevenue,
       totalExpenses,
@@ -146,10 +143,11 @@ exports.getFinancialStats = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("Erro Geral Financeiro:", error);
-    return res.status(500).json({ error: "Erro interno ao processar financeiro." });
+    console.error("🔴 Erro Geral Financeiro:", error);
+    res.status(500).json({ error: "Erro interno no financeiro." });
   }
 };
+// ... (mantenha o resto do arquivo igual)
 
 exports.addExpense = async (req, res) => {
   try {
