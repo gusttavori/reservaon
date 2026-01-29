@@ -1,21 +1,24 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
-// Se você não tiver o utils/logger, pode remover a linha abaixo e a chamada logAction
-const { logAction } = require('../utils/logger'); 
 
 // --- CONFIGURAÇÕES DA EMPRESA ---
-
 exports.getSettings = async (req, res) => {
   try {
-    // Busca a empresa pelo ID do usuário logado (garantido pelo token)
-    const company = await prisma.company.findUnique({ 
+    // Verificação de segurança
+    if (!req.userId) {
+      return res.status(401).json({ error: "Usuário não autenticado." });
+    }
+
+    // CORREÇÃO: Mudado de findUnique para findFirst
+    // Isso evita o erro caso userId não seja @unique no schema
+    const company = await prisma.company.findFirst({ 
       where: { userId: req.userId } 
     });
     
     if (!company) return res.status(404).json({ error: "Empresa não encontrada" });
 
     res.json({
-      name: company.name, // Adicionado para exibir o nome no formulário
+      name: company.name,
       category: company.category,
       openingTime: company.openingTime,
       closingTime: company.closingTime,
@@ -27,55 +30,65 @@ exports.getSettings = async (req, res) => {
       logoUrl: company.logoUrl
     });
   } catch (error) {
+    console.error("Erro getSettings:", error);
     res.status(500).json({ error: "Erro ao buscar configurações." });
   }
 };
 
 exports.updateSettings = async (req, res) => {
   try {
-    const { name, openingTime, closingTime, workDays, whatsapp, workSchedule, address, description, logoUrl, category } = req.body;
+    if (!req.userId) return res.status(401).json({ error: "Usuário não autenticado." });
 
-    // Atualiza buscando pelo userId
-    const company = await prisma.company.update({
-      where: { userId: req.userId },
-      data: { 
-        name,
-        openingTime, closingTime, workDays, whatsapp, workSchedule, address, description, logoUrl, category
-      }
+    const { name, openingTime, closingTime, workDays, whatsapp, workSchedule, address, description, logoUrl, category } = req.body;
+    
+    // 1. Busca a empresa primeiro para pegar o ID
+    const existingCompany = await prisma.company.findFirst({
+      where: { userId: req.userId }
     });
 
-    // Tenta registrar log, se falhar não trava a requisição
-    try {
-      if (typeof logAction === 'function') {
-        await logAction(company.id, req.userId, 'UPDATE_SETTINGS', 'Atualizou as configurações.');
-      }
-    } catch (logError) {
-      console.warn("Falha ao registrar log:", logError.message);
-    }
+    if (!existingCompany) return res.status(404).json({ error: "Empresa não encontrada." });
 
+    // 2. Atualiza usando o ID (que o Prisma aceita no update)
+    const company = await prisma.company.update({
+      where: { id: existingCompany.id },
+      data: { name, openingTime, closingTime, workDays, whatsapp, workSchedule, address, description, logoUrl, category }
+    });
+    
     res.json(company);
   } catch (error) {
-    console.error(error);
+    console.error("Erro updateSettings:", error);
     res.status(500).json({ error: "Erro ao atualizar configurações." });
   }
 };
 
-// --- FINANCEIRO ---
+// --- FINANCEIRO (CORRIGIDO) ---
 
 exports.getFinancialStats = async (req, res) => {
   try {
-    const { month, year } = req.query;
-    const userId = req.userId;
+    if (!req.userId) return res.status(401).json({ error: "Usuário não autenticado." });
 
-    // 1. Encontrar a empresa do usuário
-    const company = await prisma.company.findUnique({ where: { userId } });
+    // 1. Converter params para Inteiros
+    const month = parseInt(req.query.month);
+    const year = parseInt(req.query.year);
+
+    if (!month || !year) {
+      return res.status(400).json({ error: "Mês e Ano são obrigatórios." });
+    }
+
+    // CORREÇÃO: findFirst em vez de findUnique
+    const company = await prisma.company.findFirst({ 
+      where: { userId: req.userId } 
+    });
+    
     if (!company) return res.status(404).json({ error: "Empresa não encontrada" });
 
     // 2. Definir intervalo de datas
     const startDate = new Date(year, month - 1, 1);
-    const endDate = new Date(year, month, 0, 23, 59, 59);
+    const endDate = new Date(year, month, 0, 23, 59, 59, 999);
 
-    // 3. Buscar Agendamentos (Receitas)
+    console.log(`Buscando financeiro: Empresa ${company.id} | ${startDate.toISOString()} até ${endDate.toISOString()}`);
+
+    // 3. Buscar Agendamentos
     const appointments = await prisma.appointment.findMany({
       where: {
         companyId: company.id,
@@ -87,20 +100,25 @@ exports.getFinancialStats = async (req, res) => {
     });
 
     // 4. Buscar Despesas
-    const expenses = await prisma.expense.findMany({
-      where: {
-        companyId: company.id,
-        date: { gte: startDate, lte: endDate }
-      },
-      orderBy: { date: 'desc' }
-    });
+    let expenses = [];
+    try {
+      expenses = await prisma.expense.findMany({
+        where: {
+          companyId: company.id,
+          date: { gte: startDate, lte: endDate }
+        },
+        orderBy: { date: 'desc' }
+      });
+    } catch (dbError) {
+      console.error("ERRO CRÍTICO NO PRISMA EXPENSE:", dbError);
+      expenses = []; 
+    }
 
-    // 5. Calcular Totais
-    let realizedRevenue = 0; // Pago/Concluído
-    let potentialRevenue = 0; // Pendente
+    // 5. Cálculos
+    let realizedRevenue = 0;
+    let potentialRevenue = 0;
     let totalExpenses = 0;
 
-    // Mapeia agendamentos para o histórico e soma valores
     const history = appointments.map(app => {
       const price = Number(app.service.price);
       if (['COMPLETED', 'CONFIRMED'].includes(app.status)) {
@@ -117,30 +135,40 @@ exports.getFinancialStats = async (req, res) => {
 
     const netProfit = realizedRevenue - totalExpenses;
 
-    // Retorna JSON no formato que o FinancialManager espera
     return res.json({
       realizedRevenue,
       potentialRevenue,
       totalExpenses,
       netProfit,
       totalAppointments: appointments.length,
-      history,        // Lista de agendamentos
-      expensesHistory: expenses // Lista de despesas
+      history,
+      expensesHistory: expenses
     });
 
   } catch (error) {
-    console.error("Erro financeiro:", error);
-    return res.status(500).json({ error: "Erro ao buscar financeiro." });
+    console.error("Erro Geral Financeiro:", error);
+    return res.status(500).json({ error: "Erro interno ao processar financeiro." });
   }
 };
 
 exports.addExpense = async (req, res) => {
   try {
+    if (!req.userId) return res.status(401).json({ error: "Usuário não autenticado." });
+
     const { description, amount, date } = req.body;
     
-    // Busca a empresa para vincular a despesa
-    const company = await prisma.company.findUnique({ where: { userId: req.userId } });
+    if (!description || !amount || !date) {
+      return res.status(400).json({ error: "Dados incompletos." });
+    }
+
+    // CORREÇÃO: findFirst em vez de findUnique
+    const company = await prisma.company.findFirst({ 
+      where: { userId: req.userId } 
+    });
+
     if (!company) return res.status(404).json({ error: "Empresa não encontrada" });
+
+    console.log("Tentando salvar despesa:", { description, amount, date });
 
     const expense = await prisma.expense.create({
       data: {
@@ -150,20 +178,27 @@ exports.addExpense = async (req, res) => {
         companyId: company.id
       }
     });
+    
     res.status(201).json(expense);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Erro ao salvar despesa." });
+    console.error("Erro ao salvar despesa:", error);
+    res.status(500).json({ error: "Erro ao salvar despesa no banco." });
   }
 };
 
 exports.deleteExpense = async (req, res) => {
   const { id } = req.params;
-  
   try {
-    const company = await prisma.company.findUnique({ where: { userId: req.userId } });
+    if (!req.userId) return res.status(401).json({ error: "Usuário não autenticado." });
+
+    // CORREÇÃO: findFirst
+    const company = await prisma.company.findFirst({ 
+      where: { userId: req.userId } 
+    });
     
-    // Garante que a despesa pertence à empresa do usuário logado
+    if (!company) return res.status(404).json({ error: "Empresa não encontrada" });
+
+    // Verifica se a despesa pertence à empresa antes de deletar
     const expense = await prisma.expense.findFirst({ 
       where: { id, companyId: company.id } 
     });
@@ -173,6 +208,7 @@ exports.deleteExpense = async (req, res) => {
     await prisma.expense.delete({ where: { id } });
     res.json({ message: "Despesa removida." });
   } catch (error) {
+    console.error("Erro ao deletar despesa:", error);
     res.status(500).json({ error: "Erro ao deletar despesa." });
   }
 };
