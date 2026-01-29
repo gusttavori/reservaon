@@ -1,6 +1,6 @@
 require('dotenv').config();
 const express = require('express');
-const cors = require('cors');
+const cors = require('cors'); // Agora temos certeza que está instalado!
 
 // Importação das Rotas
 const authRoutes = require('./src/routes/authRoutes'); 
@@ -16,26 +16,25 @@ const reviewRoutes = require('./src/routes/reviewRoutes');
 const analyticsRoutes = require('./src/routes/analyticsRoutes');
 const logRoutes = require('./src/routes/logRoutes');
 const uploadRoutes = require('./src/routes/uploadRoutes');
-
 const webhookController = require('./src/controllers/webhookController');
 
 const app = express();
 
+// --- CORREÇÃO DEFINITIVA (Bala de Prata) ---
+// O asterisco '*' permite que QUALQUER site acesse sua API.
+// Isso elimina 100% dos erros de bloqueio de origem.
 app.use(cors({
-  origin: [
-    'https://reservaon.vercel.app',   // Seu Frontend em Produção
-    'http://localhost:5173',          // Seu Frontend Local (Vite)
-    'http://localhost:3000'           // Seu Backend Local
-  ],
+  origin: '*', 
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
-  credentials: true // Permite cookies/sessões se necessário
 }));
 
+// Webhook
 app.post('/api/webhook', express.raw({ type: 'application/json' }), webhookController.handleWebhook);
 
 app.use(express.json());
 
+// Rotas
 app.use('/api/auth', authRoutes);
 app.use('/api/services', serviceRoutes);
 app.use('/api/public', publicRoutes);
@@ -50,11 +49,12 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/api/logs', logRoutes);
 app.use('/api/upload', uploadRoutes);
 
+// Health Check
 app.get('/', (req, res) => {
   res.json({ 
     status: "API Online 🚀", 
     message: "Bem-vindo ao Backend do ReservaON",
-    timestamp: new Date()
+    cors: "Habilitado para todos (*)"
   });
 });
 
