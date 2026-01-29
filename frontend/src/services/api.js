@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // URL EXATA do seu Render (Hardcoded para produção)
-const API_URL = 'https://reservaon.onrender.com';
+const API_URL = 'https://reservaon-lv6w.onrender.com';
 
 const api = axios.create({
   baseURL: API_URL,
