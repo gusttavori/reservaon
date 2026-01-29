@@ -7,9 +7,7 @@ exports.getCompanies = async (req, res) => {
   try {
     const companies = await prisma.company.findMany({
       where: {
-        // Se você não tiver certeza se as empresas estão 'active', 
-        // comente a linha abaixo para testar:
-        active: true, 
+        active: true,
         name: {
           contains: search || '',
           mode: 'insensitive'
@@ -17,6 +15,7 @@ exports.getCompanies = async (req, res) => {
       },
       include: {
         plan: true,
+        // Tenta incluir reviews se a relação existir
         reviews: {
           select: { rating: true }
         }
@@ -24,12 +23,12 @@ exports.getCompanies = async (req, res) => {
     });
 
     const formattedCompanies = companies.map(company => {
-      const totalReviews = company.reviews.length;
-      const sumRatings = company.reviews.reduce((acc, r) => acc + r.rating, 0);
+      // Blindagem: Se reviews for undefined, trata como array vazio
+      const safeReviews = company.reviews || [];
+      const totalReviews = safeReviews.length;
+      const sumRatings = safeReviews.reduce((acc, r) => acc + r.rating, 0);
       const averageRating = totalReviews > 0 ? (sumRatings / totalReviews) : 0;
 
-      // CORREÇÃO DE SEGURANÇA: Uso de optional chaining (?.)
-      // Evita erro 500 se a empresa não tiver plano
       const planSlug = company.plan?.slug?.toLowerCase() || 'basico';
       const showRating = ['avancado', 'premium'].includes(planSlug);
 
@@ -40,41 +39,89 @@ exports.getCompanies = async (req, res) => {
         logoUrl: company.logoUrl,
         address: company.address,
         description: company.description,
-        // Retorna a média apenas se o plano permitir
         averageRating: showRating ? averageRating : null,
         totalReviews: showRating ? totalReviews : null,
         openingTime: company.openingTime,
         closingTime: company.closingTime,
-        category: company.category // Útil para filtros
+        category: company.category
       };
     });
 
     res.json(formattedCompanies);
   } catch (error) {
-    console.error("Erro ao buscar empresas:", error);
-    // Retorna array vazio em vez de erro se a tabela não existir ainda (opcional)
-    res.status(500).json({ error: "Erro ao buscar empresas." });
+    console.error("Erro ao buscar catálogo:", error);
+    // Retorna array vazio em caso de erro crítico para não travar o frontend
+    res.json([]); 
   }
 };
 
 exports.getCompanyBySlug = async (req, res) => {
   const { slug } = req.params;
   try {
+    // Busca a empresa
     const company = await prisma.company.findUnique({
       where: { slug },
       include: {
         services: true,
         plan: true,
-        workSchedule: true, // Importante para o BookingPage
-        reviews: true       // Se quiser exibir reviews na página interna
+        reviews: true 
+        // OBS: Removido 'workSchedule: true' pois é um campo JSON, não uma relação.
+        // Ele virá automaticamente junto com os dados da company.
       }
     });
 
-    if (!company) return res.status(404).json({ error: "Empresa não encontrada" });
+    if (!company) {
+      return res.status(404).json({ error: "Empresa não encontrada" });
+    }
 
     res.json(company);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Erro ao buscar empresa." });
+    console.error("Erro ao buscar empresa (Slug):", error);
+    
+    // TENTATIVA DE RECUPERAÇÃO (FALLBACK)
+    // Se o erro for por causa do 'include: reviews' (caso a tabela não exista),
+    // tentamos buscar de novo sem incluir as reviews.
+    try {
+      const companySimple = await prisma.company.findUnique({
+        where: { slug },
+        include: {
+          services: true,
+          plan: true
+        }
+      });
+      if (companySimple) return res.json(companySimple);
+    } catch (retryError) {
+      console.error("Falha total ao buscar empresa:", retryError);
+    }
+
+    res.status(500).json({ error: "Erro interno ao carregar página da empresa." });
+  }
+};
+
+// POST: Criar Agendamento Público
+exports.createAppointment = async (req, res) => {
+  try {
+    const { companyId, serviceId, date, clientName, clientPhone, notes } = req.body;
+
+    if (!companyId || !serviceId || !date || !clientName || !clientPhone) {
+      return res.status(400).json({ error: "Preencha todos os campos obrigatórios." });
+    }
+
+    const appointment = await prisma.appointment.create({
+      data: {
+        companyId,
+        serviceId,
+        date: new Date(date),
+        clientName,  
+        clientPhone, 
+        notes,
+        status: 'PENDING' 
+      }
+    });
+
+    res.status(201).json(appointment);
+  } catch (error) {
+    console.error("Erro ao agendar:", error);
+    res.status(500).json({ error: "Erro ao criar agendamento." });
   }
 };
