@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import axios from 'axios';
+import api from '../services/api'; // <--- IMPORTANTE: Usa a configuração do Render
 import { Save, Phone, Calendar, MapPin, FileText, Image, Upload, Trash2 } from 'lucide-react';
 import './SettingsManager.css';
 
@@ -30,10 +30,8 @@ const SettingsManager = () => {
 
   const fetchSettings = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const res = await axios.get('http://localhost:3000/api/company/settings', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      // CORREÇÃO: Usa 'api' em vez de axios puro + localhost
+      const res = await api.get('/api/company/settings');
       
       setSettings({
         whatsapp: res.data.whatsapp || '',
@@ -44,6 +42,7 @@ const SettingsManager = () => {
       });
     } catch (error) {
       console.error("Erro ao carregar configs", error);
+      // Opcional: Adicionar tratamento se for 404 (primeiro acesso)
     }
   };
 
@@ -56,10 +55,9 @@ const SettingsManager = () => {
     formData.append('file', file);
 
     try {
-      const token = localStorage.getItem('token');
-      const res = await axios.post('http://localhost:3000/api/upload', formData, {
+      // CORREÇÃO: Usa 'api' e remove token manual (o interceptor resolve)
+      const res = await api.post('/api/upload', formData, {
         headers: { 
-          Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data'
         }
       });
@@ -76,17 +74,17 @@ const SettingsManager = () => {
   const handleSave = async (e) => {
     e.preventDefault();
     try {
-      const token = localStorage.getItem('token');
-      await axios.put('http://localhost:3000/api/company/settings', {
+      // CORREÇÃO: Usa 'api' e remove localhost
+      await api.put('/api/company/settings', {
         ...settings,
+        // Mantém a lógica de compatibilidade que você criou
         openingTime: settings.workSchedule[1].start,
         closingTime: settings.workSchedule[1].end,
         workDays: settings.workSchedule.filter(d => d.active).map(d => d.day).join(',')
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
       });
       alert("Configurações salvas com sucesso! ✅");
     } catch (error) {
+      console.error(error);
       alert("Erro ao salvar.");
     }
   };
