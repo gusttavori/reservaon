@@ -1,15 +1,32 @@
 const express = require('express');
 const router = express.Router();
-const upload = require('../config/cloudinary');
+const multer = require('multer');
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const cloudinary = require('cloudinary').v2;
 const authMiddleware = require('../middlewares/authMiddleware');
 
-// Rota POST /api/upload
-// O middleware 'upload.single('file')' processa o arquivo e joga no Cloudinary antes da função rodar
+// Configuração do Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'reservaon-logos',
+    allowed_formats: ['jpg', 'png', 'jpeg', 'webp'],
+  },
+});
+
+const upload = multer({ storage: storage });
+
 router.post('/', authMiddleware, upload.single('file'), (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'Nenhum arquivo enviado.' });
   }
-  // O Cloudinary devolve o link seguro em req.file.path
+  // Retorna a URL segura do Cloudinary
   res.json({ url: req.file.path });
 });
 
