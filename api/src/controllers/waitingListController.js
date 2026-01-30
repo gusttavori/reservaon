@@ -1,10 +1,9 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-// ROTA PÚBLICA
+// ROTA PÚBLICA: Entrar na lista
 exports.joinWaitingList = async (req, res) => {
   const { companyId, customerName, phone, serviceName, notes } = req.body;
-
   try {
     const entry = await prisma.waitingList.create({
       data: {
@@ -16,13 +15,14 @@ exports.joinWaitingList = async (req, res) => {
         status: 'WAITING'
       }
     });
-    res.status(201).json(entry);
+    res.status(201).json({ message: "Adicionado à lista." });
   } catch (error) {
-    res.status(500).json({ error: "Erro ao entrar na lista de espera." });
+    console.error(error);
+    res.status(500).json({ error: "Erro ao entrar na lista." });
   }
 };
 
-// ROTA PRIVADA
+// ROTA PRIVADA: Listar no Dashboard
 exports.getWaitingList = async (req, res) => {
   const companyId = req.user.companyId;
   try {
@@ -39,16 +39,10 @@ exports.getWaitingList = async (req, res) => {
   }
 };
 
-// ROTA PRIVADA: Remover/Atualizar
+// ROTA PRIVADA: Remover da lista
 exports.removeFromList = async (req, res) => {
   const { id } = req.params;
-  const companyId = req.user.companyId;
-
   try {
-    // Verifica se pertence à empresa
-    const entry = await prisma.waitingList.findFirst({ where: { id, companyId } });
-    if (!entry) return res.status(404).json({ error: "Item não encontrado." });
-
     await prisma.waitingList.delete({ where: { id } });
     res.json({ message: "Removido da lista." });
   } catch (error) {

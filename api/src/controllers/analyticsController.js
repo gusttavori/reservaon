@@ -6,19 +6,19 @@ exports.getAdvancedStats = async (req, res) => {
   const { month, year } = req.query;
 
   try {
-    const startDate = month && year 
-      ? new Date(year, month - 1, 1) 
-      : new Date(new Date().getFullYear(), new Date().getMonth(), 1);
-    
-    const endDate = month && year 
-      ? new Date(year, month, 0, 23, 59, 59) 
-      : new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0, 23, 59, 59);
+    // Lógica robusta de data
+    const now = new Date();
+    const targetMonth = month ? parseInt(month) - 1 : now.getMonth();
+    const targetYear = year ? parseInt(year) : now.getFullYear();
 
-    // 1. Buscamos todos os agendamentos concluídos do período
+    const startDate = new Date(targetYear, targetMonth, 1);
+    const endDate = new Date(targetYear, targetMonth + 1, 0, 23, 59, 59);
+
+    // 1. Buscamos todos os agendamentos concluídos ou confirmados do período
     const appointments = await prisma.appointment.findMany({
       where: {
         companyId,
-        status: { in: ['COMPLETED', 'CONFIRMED'] }, // Considera confirmados também para projeção
+        status: { in: ['COMPLETED', 'CONFIRMED'] },
         date: { gte: startDate, lte: endDate }
       },
       include: {

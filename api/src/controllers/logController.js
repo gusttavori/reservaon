@@ -5,15 +5,16 @@ exports.getActivityLogs = async (req, res) => {
   const companyId = req.user.companyId;
 
   try {
-    // Verificar Plano (Feature Premium)
+    // Verificar Plano
     const company = await prisma.company.findUnique({
       where: { id: companyId },
       include: { plan: true }
     });
 
-    // Opcional: Se quiser liberar para todos por enquanto, comente o if abaixo
-    if (company.plan.slug !== 'premium' && company.plan.slug !== 'avancado') {
-       return res.status(403).json({ error: "Funcionalidade exclusiva do plano Premium." });
+    // Libera apenas para Avançado e Premium
+    const allowedPlans = ['avancado', 'premium'];
+    if (!allowedPlans.includes(company.plan.slug.toLowerCase())) {
+       return res.status(403).json({ error: "Funcionalidade exclusiva dos planos Avançado e Premium." });
     }
 
     const logs = await prisma.activityLog.findMany({

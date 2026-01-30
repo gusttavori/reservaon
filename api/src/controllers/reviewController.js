@@ -34,8 +34,9 @@ exports.getReviews = async (req, res) => {
     });
     
     // Calcula média simples
-    const total = reviews.reduce((acc, r) => acc + r.rating, 0);
-    const average = reviews.length > 0 ? (total / reviews.length).toFixed(1) : 0;
+    const total = reviews.length;
+    const sum = reviews.reduce((acc, r) => acc + r.rating, 0);
+    const average = total > 0 ? (sum / total).toFixed(1) : 0;
 
     res.json({ reviews, average, total: reviews.length });
   } catch (error) {
