@@ -10,10 +10,6 @@ exports.listAppointments = async (req, res) => {
   try {
     const whereClause = { companyId };
 
-    // Se for funcionário, você pode restringir se quiser.
-    // Aqui estou deixando ver tudo ou filtrando se tiver regra de negócio
-    // if (userRole === 'PROFESSIONAL') { ... }
-
     const appointments = await prisma.appointment.findMany({
       where: whereClause,
       include: {
@@ -110,5 +106,26 @@ exports.updateStatus = async (req, res) => {
     return res.json(updated);
   } catch (error) {
     return res.status(500).json({ error: "Erro ao atualizar status." });
+  }
+};
+
+// --- A FUNÇÃO QUE FALTAVA ---
+exports.deleteAppointment = async (req, res) => {
+  const { id } = req.params;
+  try {
+    // Verifica se pertence à empresa antes de deletar
+    const appointment = await prisma.appointment.findFirst({
+      where: { id, companyId: req.user.companyId }
+    });
+
+    if (!appointment) {
+      return res.status(404).json({ error: "Agendamento não encontrado." });
+    }
+
+    await prisma.appointment.delete({ where: { id } });
+    res.json({ message: "Agendamento cancelado com sucesso." });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Erro ao cancelar agendamento." });
   }
 };
