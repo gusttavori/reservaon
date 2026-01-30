@@ -20,10 +20,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [user, setUser] = useState(null);
-  
-  // CORREÇÃO: Inicia como false para bloquear por padrão até verificar
   const [isActive, setIsActive] = useState(false);
-  
   const [activeTab, setActiveTab] = useState('overview'); 
   const [stats, setStats] = useState({ appointmentsToday: 0, totalRevenue: 0, uniqueClients: 0 });
 
@@ -40,16 +37,13 @@ const Dashboard = () => {
       const userData = JSON.parse(storedUser);
       setUser(userData);
 
-      // LÓGICA DE ASSINATURA CORRIGIDA
-      // Só ativa se o status for explicitamente 'ACTIVE'
-      if (userData.subscriptionStatus === 'ACTIVE') {
+      if (userData.subscriptionStatus === 'ACTIVE' || userData.subscriptionStatus === 'TRIAL') {
         setIsActive(true);
         fetchStats();
       } else {
         setIsActive(false);
       }
       
-      // Se voltou do Stripe com sucesso, ativa manual e salva
       if (searchParams.get('success')) {
         setIsActive(true);
         userData.subscriptionStatus = 'ACTIVE';
@@ -78,13 +72,11 @@ const Dashboard = () => {
 
   const handleSubscribe = async () => {
     try {
-      // Usa a instância 'api' para garantir a URL certa
       const res = await api.post('/api/payment/create-checkout');
-      // Redireciona para o Stripe
       window.location.href = res.data.url;
     } catch (error) {
       console.error(error);
-      alert("Erro ao iniciar pagamento. Verifique se o Backend está configurado com as chaves do Stripe.");
+      alert("Erro ao iniciar pagamento.");
     }
   };
 
@@ -99,7 +91,11 @@ const Dashboard = () => {
   if (!user) return null;
 
   const isOwner = user.role === 'OWNER';
-  const canViewFinancials = isOwner || user.canViewFinancials;
+  
+  // CORREÇÃO: Permissões rigorosas
+  // O usuário deve ter a permissão explícita no banco ou ser DONO
+  const canViewFinancials = isOwner || user.canViewFinancials === true;
+  const canManageAgenda = isOwner || user.canManageAgenda === true;
   
   const isBasicPlan = user.planSlug === 'basico';
   const isAdvancedOrPremium = ['avancado', 'premium'].includes(user.planSlug);
@@ -115,7 +111,6 @@ const Dashboard = () => {
     return labels[slug] || 'Plano';
   };
 
-  // TELA DE BLOQUEIO (SE NÃO TIVER ASSINATURA ATIVA)
   if (!isActive) {
     return (
       <div className="dashboard-layout" style={{justifyContent: 'center', alignItems: 'center'}}>
@@ -125,14 +120,14 @@ const Dashboard = () => {
           </div>
           <h1 style={{fontSize: '1.8rem', marginBottom: '1rem', color: '#1e293b'}}>Ative sua conta</h1>
           <p style={{color: '#64748b', marginBottom: '2rem', lineHeight: '1.6'}}>
-            Para começar a agendar e gerenciar seu negócio, finalize a assinatura do seu plano.
+            Sua assinatura expirou ou o período de teste acabou.
           </p>
           <button onClick={handleSubscribe} style={{background: '#000000', color: 'white', border: 'none', padding: '14px 28px', borderRadius: '8px', fontSize: '1rem', fontWeight: 'bold', cursor: 'pointer', width: '100%'}}>
             Ativar Agora
           </button>
           <div style={{marginTop: '1rem'}}>
              <button onClick={handleLogout} style={{background: 'transparent', border: 'none', color: '#64748b', cursor: 'pointer', textDecoration: 'underline', padding: 0}}>
-               Sair e voltar ao Login
+               Sair
              </button>
           </div>
         </div>
@@ -192,19 +187,11 @@ const Dashboard = () => {
                 <div><h4>Clientes Únicos</h4><p className="stat-value">{stats.uniqueClients}</p></div>
               </div>
             </div>
-
-            {isBasicPlan && (
-              <div style={{marginTop: '20px', padding: '20px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0', textAlign: 'left'}}>
-                <h4 style={{marginTop: 0, color: '#475569'}}>Acesso Rápido</h4>
-                <button onClick={() => setActiveTab('agenda')} style={{background: '#0f172a', color: 'white', padding: '12px 24px', borderRadius: '8px', border: 'none', fontSize: '1rem', fontWeight: 'bold', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '8px'}}>
-                  <Calendar size={18}/> Ir para Agenda
-                </button>
-              </div>
-            )}
           </div>
         );
 
       case 'agenda':
+        if (!canManageAgenda) return <div className="animate-fade-in"><h3>Acesso restrito.</h3></div>;
         return <div className="animate-fade-in"><h2 className="section-title">Minha Agenda</h2><AppointmentsList /></div>;
       
       case 'financial':
@@ -217,62 +204,22 @@ const Dashboard = () => {
 
       case 'waitinglist':
         if (!isOwner) return <div className="animate-fade-in"><h3>Acesso restrito.</h3></div>;
-        if (!isAdvancedOrPremium) return (
-            <div className="animate-fade-in">
-              <h2 className="section-title">Lista de Espera</h2>
-              <div className="lock-screen-container">
-                <div className="lock-icon-wrapper"><Lock size={30} color="#d97706" /></div>
-                <h3 className="lock-title">Recurso Avançado</h3>
-                <p className="lock-description">Não perca clientes. Habilite a Lista de Espera Automática nos planos Avançado ou Premium.</p>
-                <button onClick={handleSubscribe} style={{background: '#d97706', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold'}}>Fazer Upgrade</button>
-              </div>
-            </div>
-        );
+        if (!isAdvancedOrPremium) return <LockScreen title="Lista de Espera" />;
         return <div className="animate-fade-in"><h2 className="section-title">Lista de Espera</h2><WaitingListManager /></div>;
 
       case 'reviews':
         if (!isOwner) return <div className="animate-fade-in"><h3>Acesso restrito.</h3></div>;
-        if (!isAdvancedOrPremium) return (
-            <div className="animate-fade-in">
-              <h2 className="section-title">Avaliações do Estabelecimento</h2>
-              <div className="lock-screen-container">
-                <div className="lock-icon-wrapper"><Lock size={30} color="#d97706" /></div>
-                <h3 className="lock-title">Recurso Avançado</h3>
-                <p className="lock-description">Saiba o que seus clientes pensam. Habilite o Sistema de Avaliações nos planos Avançado ou Premium.</p>
-                <button onClick={handleSubscribe} style={{background: '#d97706', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold'}}>Fazer Upgrade</button>
-              </div>
-            </div>
-        );
+        if (!isAdvancedOrPremium) return <LockScreen title="Avaliações" />;
         return <div className="animate-fade-in"><h2 className="section-title">Avaliações</h2><ReviewsManager /></div>;
 
       case 'analytics':
         if (!isOwner) return <div className="animate-fade-in"><h3>Acesso restrito.</h3></div>;
-        if (!isAdvancedOrPremium) return (
-            <div className="animate-fade-in">
-              <h2 className="section-title">Relatórios e Inteligência</h2>
-              <div className="lock-screen-container">
-                <div className="lock-icon-wrapper"><Lock size={30} color="#d97706" /></div>
-                <h3 className="lock-title">Inteligência de Negócio</h3>
-                <p className="lock-description">Descubra quais serviços vendem mais e quem são seus melhores profissionais. Gráficos detalhados exclusivos para Planos Avançado e Premium.</p>
-                <button onClick={handleSubscribe} style={{background: '#d97706', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold'}}>Fazer Upgrade</button>
-              </div>
-            </div>
-        );
+        if (!isAdvancedOrPremium) return <LockScreen title="Analytics" />;
         return <div className="animate-fade-in"><h2 className="section-title">Relatórios e Analytics</h2><AnalyticsDashboard /></div>;
 
       case 'logs':
         if (!isOwner) return <div className="animate-fade-in"><h3>Acesso restrito.</h3></div>;
-        if (!isPremium) return (
-            <div className="animate-fade-in">
-              <h2 className="section-title">Segurança e Auditoria</h2>
-              <div className="lock-screen-container">
-                <div className="lock-icon-wrapper" style={{background: '#1e293b'}}><ShieldCheck size={30} color="#facc15" /></div>
-                <h3 className="lock-title">Recurso Premium</h3>
-                <p className="lock-description">Auditoria completa. Saiba exatamente quem alterou preços, excluiu agendamentos ou mudou configurações. Exclusivo para o Plano Premium.</p>
-                <button onClick={handleSubscribe} style={{background: '#1e293b', color: '#facc15', border: 'none', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold'}}>Ser Premium</button>
-              </div>
-            </div>
-        );
+        if (!isPremium) return <LockScreen title="Logs" premium />;
         return <div className="animate-fade-in"><h2 className="section-title">Logs de Atividade</h2><ActivityLogs /></div>;
 
       case 'services':
@@ -287,6 +234,19 @@ const Dashboard = () => {
     }
   };
 
+  // Componente Auxiliar para Telas Bloqueadas
+  const LockScreen = ({ title, premium }) => (
+    <div className="animate-fade-in">
+      <h2 className="section-title">{title}</h2>
+      <div className="lock-screen-container">
+        <div className="lock-icon-wrapper" style={premium ? {background: '#1e293b'} : {}}><Lock size={30} color={premium ? "#facc15" : "#d97706"} /></div>
+        <h3 className="lock-title">Recurso {premium ? 'Premium' : 'Avançado'}</h3>
+        <p className="lock-description">Faça upgrade do seu plano para acessar {title}.</p>
+        <button onClick={handleSubscribe} style={{background: premium ? '#1e293b' : '#d97706', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold'}}>Fazer Upgrade</button>
+      </div>
+    </div>
+  );
+
   return (
     <div className="dashboard-layout">
       <aside className="sidebar">
@@ -297,27 +257,15 @@ const Dashboard = () => {
           <div className={`nav-item ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => setActiveTab('overview')}>
             <LayoutDashboard size={20} /><span>Visão Geral</span>
           </div>
-          <div className={`nav-item ${activeTab === 'agenda' ? 'active' : ''}`} onClick={() => setActiveTab('agenda')}>
-            <Calendar size={20} /><span>Agenda</span>
-          </div>
           
-          {isOwner && (
-            <>
-              <div className={`nav-item ${activeTab === 'waitinglist' ? 'active' : ''}`} onClick={() => setActiveTab('waitinglist')}>
-                <List size={20} /><span>Lista de Espera</span>
-              </div>
-              <div className={`nav-item ${activeTab === 'analytics' ? 'active' : ''}`} onClick={() => setActiveTab('analytics')}>
-                <BarChart2 size={20} /><span>Relatórios</span>
-              </div>
-              <div className={`nav-item ${activeTab === 'reviews' ? 'active' : ''}`} onClick={() => setActiveTab('reviews')}>
-                <Star size={20} /><span>Avaliações</span>
-              </div>
-              <div className={`nav-item ${activeTab === 'logs' ? 'active' : ''}`} onClick={() => setActiveTab('logs')}>
-                <ShieldCheck size={20} /><span>Segurança</span>
-              </div>
-            </>
+          {/* CORREÇÃO: Menu Agenda só aparece se tiver permissão */}
+          {canManageAgenda && (
+            <div className={`nav-item ${activeTab === 'agenda' ? 'active' : ''}`} onClick={() => setActiveTab('agenda')}>
+              <Calendar size={20} /><span>Agenda</span>
+            </div>
           )}
-
+          
+          {/* CORREÇÃO: Menu Financeiro só aparece se tiver permissão */}
           {canViewFinancials && (
             <div className={`nav-item ${activeTab === 'financial' ? 'active' : ''}`} onClick={() => setActiveTab('financial')}>
               <DollarSign size={20} /><span>Financeiro</span>
@@ -332,6 +280,18 @@ const Dashboard = () => {
               <div className={`nav-item ${activeTab === 'services' ? 'active' : ''}`} onClick={() => setActiveTab('services')}>
                 <Briefcase size={20} /><span>Serviços</span>
               </div>
+              <div className={`nav-item ${activeTab === 'waitinglist' ? 'active' : ''}`} onClick={() => setActiveTab('waitinglist')}>
+                <List size={20} /><span>Lista de Espera</span>
+              </div>
+              <div className={`nav-item ${activeTab === 'analytics' ? 'active' : ''}`} onClick={() => setActiveTab('analytics')}>
+                <BarChart2 size={20} /><span>Relatórios</span>
+              </div>
+              <div className={`nav-item ${activeTab === 'reviews' ? 'active' : ''}`} onClick={() => setActiveTab('reviews')}>
+                <Star size={20} /><span>Avaliações</span>
+              </div>
+              <div className={`nav-item ${activeTab === 'logs' ? 'active' : ''}`} onClick={() => setActiveTab('logs')}>
+                <ShieldCheck size={20} /><span>Segurança</span>
+              </div>
               <div className={`nav-item ${activeTab === 'settings' ? 'active' : ''}`} onClick={() => setActiveTab('settings')}>
                 <Settings size={20} /><span>Configurações</span>
               </div>
@@ -344,7 +304,7 @@ const Dashboard = () => {
           <div style={{flex: 1, overflow: 'hidden'}}>
             <p style={{margin: 0, fontWeight: 'bold', fontSize: '0.9rem', whiteSpace: 'nowrap'}}>{user.name}</p>
             <p style={{margin: 0, fontSize: '0.75rem', color: '#94a3b8'}}>
-              {user.role === 'OWNER' ? 'Dono' : 'Equipe'} • {getPlanLabel(user.planSlug)}
+              {user.role === 'OWNER' ? 'Dono' : 'Equipe'}
             </p>
           </div>
           <button onClick={handleLogout} title="Sair" style={{background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer'}}>

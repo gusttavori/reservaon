@@ -13,13 +13,17 @@ exports.getTeam = async (req, res) => {
   const companyId = req.user.companyId;
   try {
     const team = await prisma.user.findMany({
-      where: { companyId },
+      where: { 
+        companyId,
+        role: { in: ['OWNER', 'PROFESSIONAL'] }
+      },
       select: { 
         id: true, 
         name: true, 
         email: true, 
         role: true, 
-        canViewFinancials: true, // <--- Retorna permissão
+        canViewFinancials: true, 
+        canManageAgenda: true,
         createdAt: true 
       }
     });
@@ -30,7 +34,7 @@ exports.getTeam = async (req, res) => {
 };
 
 exports.addMember = async (req, res) => {
-  const { name, email, password, canViewFinancials } = req.body;
+  const { name, email, password, canViewFinancials, canManageAgenda } = req.body;
   const companyId = req.user.companyId;
 
   try {
@@ -41,7 +45,10 @@ exports.addMember = async (req, res) => {
 
     if (!company) return res.status(404).json({ error: "Empresa não encontrada." });
 
-    const currentCount = await prisma.user.count({ where: { companyId } });
+    const currentCount = await prisma.user.count({ 
+      where: { companyId, role: { in: ['OWNER', 'PROFESSIONAL'] } } 
+    });
+    
     const planSlug = company.plan.slug.toLowerCase();
     const limit = PLAN_LIMITS[planSlug] || 1;
 
@@ -60,9 +67,10 @@ exports.addMember = async (req, res) => {
         name,
         email,
         password: hashedPassword,
-        role: 'USER', // Usando USER em vez de PROFESSIONAL para padronizar
+        role: 'PROFESSIONAL',
         companyId,
-        canViewFinancials: canViewFinancials || false
+        canViewFinancials: canViewFinancials || false,
+        canManageAgenda: canManageAgenda !== undefined ? canManageAgenda : true
       }
     });
 
@@ -71,6 +79,34 @@ exports.addMember = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Erro ao adicionar membro." });
+  }
+};
+
+// CORREÇÃO: Nova função para Editar Membro
+exports.updateMember = async (req, res) => {
+  const { id } = req.params;
+  const { name, canViewFinancials, canManageAgenda } = req.body;
+  
+  try {
+    // Verifica se pertence à mesma empresa
+    const userCheck = await prisma.user.findFirst({
+      where: { id, companyId: req.user.companyId }
+    });
+
+    if (!userCheck) return res.status(404).json({ error: "Membro não encontrado." });
+
+    const updated = await prisma.user.update({
+      where: { id },
+      data: {
+        name,
+        canViewFinancials,
+        canManageAgenda
+      }
+    });
+    res.json(updated);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Erro ao atualizar permissões." });
   }
 };
 

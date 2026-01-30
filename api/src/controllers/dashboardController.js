@@ -7,7 +7,7 @@ exports.getDashboardStats = async (req, res) => {
   try {
     const now = new Date();
     
-    // 1. Agendamentos de Hoje (00:00 até 23:59)
+    // 1. Agendamentos de Hoje
     const startOfDay = new Date(now.setHours(0, 0, 0, 0));
     const endOfDay = new Date(now.setHours(23, 59, 59, 999));
 
@@ -19,8 +19,7 @@ exports.getDashboardStats = async (req, res) => {
       }
     });
 
-    // 2. Faturamento do Mês (Previsão: Pendente + Confirmado + Concluído)
-    // Para mostrar o potencial total do mês no card
+    // 2. Faturamento do Mês
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
 
@@ -38,15 +37,20 @@ exports.getDashboardStats = async (req, res) => {
       totalRevenue += Number(app.service.price);
     });
 
-    // 3. Clientes Únicos (Baseado no telefone)
-    // O Prisma tem uma função distinct para isso
+    // 3. Clientes Únicos
+    // CORREÇÃO: Usar clientPhone em vez de customerPhone
     const uniqueClientsList = await prisma.appointment.findMany({
-      where: { companyId },
-      distinct: ['customerPhone'],
-      select: { customerPhone: true }
+      where: { companyId, clientPhone: { not: null } },
+      distinct: ['clientPhone'],
+      select: { clientPhone: true }
     });
     
-    const uniqueClients = uniqueClientsList.length;
+    // Soma clientes cadastrados na plataforma
+    const registeredClients = await prisma.user.count({
+      where: { companyId, role: 'CLIENT' }
+    });
+
+    const uniqueClients = uniqueClientsList.length + registeredClients;
 
     return res.json({
       appointmentsToday,
