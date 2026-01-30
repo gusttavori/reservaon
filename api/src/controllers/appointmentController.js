@@ -10,24 +10,37 @@ exports.listAppointments = async (req, res) => {
   try {
     const whereClause = { companyId };
 
+    // Se for funcionário, pode descomentar para ver apenas os dele
+    // if (userRole === 'PROFESSIONAL') whereClause.professionalId = userId;
+
     const appointments = await prisma.appointment.findMany({
       where: whereClause,
       include: {
         service: true,
         professional: { select: { name: true } },
-        user: { select: { name: true } } // Cliente logado (se houver)
+        user: { select: { name: true, email: true } } // Traz dados do usuário logado se existir
       },
       orderBy: {
         date: 'asc'
       }
     });
 
-    // Formatação para garantir que o frontend receba o nome correto
+    // Formatação robusta para garantir que o nome apareça
     const formatted = appointments.map(appt => ({
-      ...appt,
-      // CORREÇÃO: Prioriza clientName (agendamento manual/publico) sobre user.name
-      title: appt.clientName || appt.user?.name || "Cliente sem nome",
-      clientName: appt.clientName || appt.user?.name // Reforço
+      id: appt.id,
+      date: appt.date,
+      status: appt.status,
+      notes: appt.notes,
+      
+      // Lógica de Nome: Prioriza o nome digitado (público/interno) > nome do usuário cadastrado > fallback
+      clientName: appt.clientName || appt.user?.name || "Cliente sem nome",
+      
+      // Lógica de Contato: Prioriza telefone digitado > email do usuário
+      clientPhone: appt.clientPhone || appt.user?.email || "Sem contato",
+      
+      serviceName: appt.service.name,
+      price: appt.service.price,
+      professionalName: appt.professional?.name
     }));
 
     return res.json(formatted);
@@ -38,16 +51,15 @@ exports.listAppointments = async (req, res) => {
   }
 };
 
-// Criar Agendamento Interno
+// ... Mantenha as outras funções (createAppointmentInternal, updateStatus, deleteAppointment) iguais ...
+// Se precisar que eu repita o arquivo todo, me avise, mas apenas a 'listAppointments' afeta a visualização.
 exports.createAppointmentInternal = async (req, res) => {
-  // CORREÇÃO: Recebe clientName e clientPhone
   const { date, clientName, clientPhone, serviceId, notes, professionalId } = req.body;
   const companyId = req.user.companyId;
 
   try {
     const appointmentDate = new Date(date);
 
-    // Validação básica
     if (!clientName || !serviceId || !date) {
       return res.status(400).json({ error: "Nome, Serviço e Data são obrigatórios." });
     }
@@ -67,14 +79,14 @@ exports.createAppointmentInternal = async (req, res) => {
     const appointment = await prisma.appointment.create({
       data: {
         date: appointmentDate,
-        clientName,   // Salva nome manual
-        clientPhone,  // Salva telefone manual
+        clientName,   
+        clientPhone,  
         serviceId,
         companyId,
         notes,
         status: "CONFIRMED",
-        userId: null, // Interno não tem vínculo obrigatório com conta
-        professionalId: professionalId || req.user.userId // Se não selecionou, quem criou é o responsável
+        userId: null, 
+        professionalId: professionalId || req.user.userId 
       }
     });
 
@@ -109,11 +121,9 @@ exports.updateStatus = async (req, res) => {
   }
 };
 
-// --- A FUNÇÃO QUE FALTAVA ---
 exports.deleteAppointment = async (req, res) => {
   const { id } = req.params;
   try {
-    // Verifica se pertence à empresa antes de deletar
     const appointment = await prisma.appointment.findFirst({
       where: { id, companyId: req.user.companyId }
     });

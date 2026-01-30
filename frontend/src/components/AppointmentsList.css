@@ -2,6 +2,7 @@
   width: 100%;
   max-width: 1000px;
   margin: 0 auto;
+  padding: 10px;
 }
 
 .appointments-header {
@@ -16,28 +17,31 @@
 .filter-group {
   display: flex;
   gap: 8px;
+  background: #f1f5f9;
+  padding: 4px;
+  border-radius: 8px;
 }
 
 .filter-btn {
-  background: white;
-  border: 1px solid #dfe1e3;
+  background: transparent;
+  border: none;
   padding: 8px 16px;
-  border-radius: 20px;
+  border-radius: 6px;
   cursor: pointer;
   font-size: 0.9rem;
+  font-weight: 500;
   color: #64748b;
   transition: all 0.2s;
 }
 
 .filter-btn:hover {
-  background: #f8fafc;
-  border-color: #cbd5e1;
+  color: #334155;
 }
 
 .filter-btn.active {
-  background: #ffffff;
-  border-color: #000000;
-  color: #000000;
+  background: white;
+  color: #0f172a;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
   font-weight: 600;
 }
 
@@ -48,7 +52,7 @@
   padding: 10px 20px;
   border-radius: 8px;
   font-weight: 600;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -83,24 +87,25 @@
 
 .appointment-card:hover {
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  border-color: #cbd5e1;
   transform: translateY(-1px);
 }
 
-.appointment-card.cancelled {
+.cancelled-card {
   opacity: 0.6;
   background: #f8fafc;
 }
 
-/* Faixa lateral colorida baseada no status */
+/* Faixa lateral colorida */
 .status-indicator {
   position: absolute;
   left: 0;
   top: 0;
   bottom: 0;
-  width: 5px;
+  width: 4px;
 }
 
-.status-indicator.pending { background-color: #eab308; }
+.status-indicator.pending { background-color: #f59e0b; }
 .status-indicator.confirmed { background-color: #2563eb; }
 .status-indicator.completed { background-color: #16a34a; }
 .status-indicator.cancelled { background-color: #ef4444; }
@@ -121,29 +126,32 @@
 
 .app-date {
   display: block;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
+  font-weight: 600;
   color: #64748b;
   text-transform: uppercase;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
 .app-hour {
   display: block;
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: #1e293b;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1;
 }
 
 .app-details h4 {
-  margin: 0 0 4px 0;
-  font-size: 1rem;
+  margin: 0 0 6px 0;
+  font-size: 1.05rem;
   color: #0f172a;
+  font-weight: 600;
 }
 
 .app-meta {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
   font-size: 0.85rem;
   color: #64748b;
 }
@@ -153,39 +161,6 @@
   align-items: center;
   gap: 6px;
 }
-
-/* Ações (Botões) */
-.app-actions {
-  display: flex;
-  gap: 8px;
-}
-
-.action-btn {
-  border: none;
-  padding: 8px;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.btn-confirm { background: #dbeafe; color: #1e40af; }
-.btn-confirm:hover { background: #bfdbfe; }
-
-.btn-complete { 
-  background: #dcfce7; 
-  color: #166534; 
-  padding: 8px 12px; 
-  gap: 6px; 
-  font-weight: 600; 
-  font-size: 0.85rem;
-}
-.btn-complete:hover { background: #bbf7d0; }
-
-.btn-cancel { background: #fee2e2; color: #991b1b; }
-.btn-cancel:hover { background: #fecaca; }
 
 /* Modal */
 .modal-overlay {
@@ -203,7 +178,7 @@
   background: white;
   padding: 2rem;
   border-radius: 16px;
-  width: 100%;
+  width: 90%;
   max-width: 420px;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
   animation: fadeIn 0.2s ease-out;
@@ -228,18 +203,33 @@
   border: none;
   cursor: pointer;
   color: #94a3b8;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s;
 }
 
-.close-modal-btn:hover { color: #475569; }
+.close-modal-btn:hover { color: #ef4444; background: #fee2e2; }
 
-.modal-form .form-group { margin-bottom: 1rem; }
+.modal-form .form-group { margin-bottom: 1.2rem; }
 
 .modal-form label {
   display: block;
   margin-bottom: 6px;
   font-weight: 500;
   font-size: 0.9rem;
-  color: #475569;
+  color: #334155;
+}
+
+.input-icon-wrapper {
+  position: relative;
+}
+
+.input-icon {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  left: 12px;
+  color: #94a3b8;
 }
 
 .modal-input {
@@ -248,10 +238,20 @@
   border-radius: 8px;
   border: 1px solid #cbd5e1;
   font-size: 0.95rem;
-  box-sizing: border-box; /* Importante para não quebrar layout */
+  box-sizing: border-box;
+  transition: border-color 0.2s;
 }
 
-/* Ajuste específico para o DatePicker no Modal */
+.modal-input:focus {
+  border-color: #3b82f6;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.modal-input.with-icon {
+  padding-left: 40px;
+}
+
 .react-datepicker-wrapper {
   width: 100%;
 }
@@ -264,20 +264,28 @@
   border: none;
   border-radius: 8px;
   font-weight: 600;
-  margin-top: 1rem;
+  margin-top: 0.5rem;
   cursor: pointer;
+  transition: background 0.2s;
 }
 
 .btn-submit-modal:hover { background: #1e293b; }
 
-/* Empty State */
 .empty-agenda {
   text-align: center;
   padding: 4rem 2rem;
   background: white;
   border-radius: 12px;
   border: 1px dashed #cbd5e1;
-  color: #94a3b8;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.loading-spinner {
+  text-align: center;
+  padding: 2rem;
+  color: #64748b;
 }
 
 @media (max-width: 600px) {

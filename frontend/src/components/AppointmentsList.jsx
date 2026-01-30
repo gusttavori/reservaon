@@ -43,6 +43,7 @@ const AppointmentsList = () => {
   };
 
   const handleStatusChange = async (id, newStatus) => {
+    // Atualização Otimista
     const oldAppointments = [...appointments];
     setAppointments(prev => prev.map(app => 
       app.id === id ? { ...app, status: newStatus } : app
@@ -52,18 +53,20 @@ const AppointmentsList = () => {
       await api.put(`/api/appointments/${id}/status`, { status: newStatus });
     } catch (error) {
       alert("Erro ao atualizar status.");
-      setAppointments(oldAppointments);
+      setAppointments(oldAppointments); // Reverte se der erro
     }
   };
 
   const handleManualBooking = async (e) => {
     e.preventDefault();
     try {
-      await api.post('/api/appointments/internal', {
-        customerName: formData.customerName,
-        customerPhone: formData.customerPhone,
+      // Ajuste para enviar clientName conforme esperado pelo backend
+      await api.post('/api/appointments', {
+        clientName: formData.customerName,
+        clientPhone: formData.customerPhone,
         serviceId: formData.serviceId,
-        date: formData.date
+        date: formData.date,
+        notes: "Agendamento Manual"
       });
       
       alert("Agendamento criado!");
@@ -85,20 +88,21 @@ const AppointmentsList = () => {
       if (filter === 'today') return appTime >= today && appTime < tomorrow;
       if (filter === 'tomorrow') return appTime >= tomorrow && appTime < (tomorrow + 86400000);
       return true;
-    }).sort((a, b) => new Date(b.date) - new Date(a.date));
+    }).sort((a, b) => new Date(a.date) - new Date(b.date)); // Ordem cronológica (mais cedo primeiro)
   };
 
-  const formatDate = (dateString) => new Date(dateString).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+  const formatDate = (dateString) => new Date(dateString).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }).toUpperCase();
   const formatTime = (dateString) => new Date(dateString).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
+  // Componente Select Personalizado
   const StatusSelect = ({ currentStatus, onChange }) => {
     const getStatusColor = (s) => {
       switch(s) {
-        case 'PENDING': return { bg: '#fef3c7', text: '#d97706', border: '#fcd34d' };
-        case 'CONFIRMED': return { bg: '#dbeafe', text: '#1e40af', border: '#93c5fd' };
-        case 'COMPLETED': return { bg: '#dcfce7', text: '#166534', border: '#86efac' };
-        case 'CANCELLED': return { bg: '#fee2e2', text: '#991b1b', border: '#fca5a5' };
-        default: return { bg: '#f1f5f9', text: '#64748b', border: '#e2e8f0' };
+        case 'PENDING': return { bg: '#fffbeb', text: '#d97706', border: '#fcd34d' };
+        case 'CONFIRMED': return { bg: '#eff6ff', text: '#2563eb', border: '#bfdbfe' };
+        case 'COMPLETED': return { bg: '#f0fdf4', text: '#16a34a', border: '#bbf7d0' };
+        case 'CANCELLED': return { bg: '#fef2f2', text: '#dc2626', border: '#fecaca' };
+        default: return { bg: '#f8fafc', text: '#64748b', border: '#e2e8f0' };
       }
     };
 
@@ -111,16 +115,17 @@ const AppointmentsList = () => {
           onChange={(e) => onChange(e.target.value)}
           style={{
             appearance: 'none',
-            background: style.bg,
+            backgroundColor: style.bg,
             color: style.text,
             border: `1px solid ${style.border}`,
             padding: '6px 28px 6px 12px',
             borderRadius: '20px',
-            fontSize: '0.85rem',
+            fontSize: '0.8rem',
             fontWeight: '600',
             cursor: 'pointer',
             outline: 'none',
-            width: '140px'
+            minWidth: '130px',
+            transition: 'all 0.2s'
           }}
         >
           <option value="PENDING">Pendente</option>
@@ -136,7 +141,7 @@ const AppointmentsList = () => {
     );
   };
 
-  if (loading) return <p>Carregando agenda...</p>;
+  if (loading) return <div className="loading-spinner">Carregando agenda...</div>;
 
   const filteredApps = filterAppointments();
 
@@ -157,12 +162,12 @@ const AppointmentsList = () => {
       <div className="appointments-grid">
         {filteredApps.length === 0 ? (
           <div className="empty-agenda">
-            <Calendar size={48} style={{opacity: 0.3, marginBottom: '1rem'}} />
-            <p>Nenhum agendamento encontrado.</p>
+            <Calendar size={48} style={{opacity: 0.3, marginBottom: '1rem', color: '#94a3b8'}} />
+            <p style={{color: '#64748b'}}>Nenhum agendamento encontrado para este período.</p>
           </div>
         ) : (
           filteredApps.map(app => (
-            <div key={app.id} className={`appointment-card ${app.status.toLowerCase()}`}>
+            <div key={app.id} className={`appointment-card ${app.status === 'CANCELLED' ? 'cancelled-card' : ''}`}>
               <div className={`status-indicator ${app.status.toLowerCase()}`}></div>
               
               <div className="app-content">
@@ -172,14 +177,16 @@ const AppointmentsList = () => {
                 </div>
                 
                 <div className="app-details">
-                  <h4>{app.customerName}</h4>
+                  {/* Usa clientName (manual) ou fallback */}
+                  <h4>{app.clientName || app.title || "Cliente Sem Nome"}</h4>
                   <div className="app-meta">
                     <div className="meta-row">
-                      <Scissors size={14} /> {app.service?.name} • R$ {Number(app.service?.price).toFixed(2)}
+                      <Scissors size={14} /> 
+                      <span>{app.serviceName || app.service?.name} • R$ {Number(app.price || app.service?.price).toFixed(2)}</span>
                     </div>
-                    {app.customerPhone && (
+                    {(app.clientPhone) && (
                       <div className="meta-row">
-                        <Phone size={14} /> {app.customerPhone}
+                        <Phone size={14} /> <span>{app.clientPhone}</span>
                       </div>
                     )}
                   </div>
@@ -208,19 +215,21 @@ const AppointmentsList = () => {
             <form onSubmit={handleManualBooking} className="modal-form">
               <div className="form-group">
                 <label>Nome do Cliente</label>
-                <div style={{position: 'relative'}}>
-                  <User size={18} style={{position: 'absolute', top: '10px', left: '10px', color: '#94a3b8'}} />
-                  <input type="text" required className="modal-input" style={{paddingLeft: '35px'}}
+                <div className="input-icon-wrapper">
+                  <User size={18} className="input-icon" />
+                  <input type="text" required className="modal-input with-icon"
                     value={formData.customerName} onChange={e => setFormData({...formData, customerName: e.target.value})}
+                    placeholder="Ex: João da Silva"
                   />
                 </div>
               </div>
               <div className="form-group">
-                <label>Telefone</label>
-                <div style={{position: 'relative'}}>
-                  <Phone size={18} style={{position: 'absolute', top: '10px', left: '10px', color: '#94a3b8'}} />
-                  <input type="text" className="modal-input" style={{paddingLeft: '35px'}}
+                <label>Telefone / WhatsApp</label>
+                <div className="input-icon-wrapper">
+                  <Phone size={18} className="input-icon" />
+                  <input type="text" className="modal-input with-icon"
                     value={formData.customerPhone} onChange={e => setFormData({...formData, customerPhone: e.target.value})}
+                    placeholder="(00) 00000-0000"
                   />
                 </div>
               </div>
@@ -240,6 +249,7 @@ const AppointmentsList = () => {
                   onChange={date => setFormData({...formData, date})}
                   showTimeSelect dateFormat="Pp" locale="pt-BR"
                   className="modal-input" wrapperClassName="datePicker"
+                  timeFormat="HH:mm" timeIntervals={30}
                 />
               </div>
               <button type="submit" className="btn-submit-modal">Confirmar Agendamento</button>
