@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../services/api';
-import { Clock, DollarSign, MessageCircle, MapPin, List, Star } from 'lucide-react';
+import { Clock, DollarSign, MessageCircle, MapPin, List, Star, User } from 'lucide-react';
 import DatePicker, { registerLocale } from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import ptBR from 'date-fns/locale/pt-BR';
@@ -16,6 +16,8 @@ const BookingPage = () => {
   const [loading, setLoading] = useState(true);
   
   const [selectedService, setSelectedService] = useState(null);
+  // ALTERADO: Estado para o profissional selecionado
+  const [selectedProfessional, setSelectedProfessional] = useState(null);
   const [startDate, setStartDate] = useState(null);
   
   const [formData, setFormData] = useState({
@@ -24,11 +26,9 @@ const BookingPage = () => {
   });
   const [submitting, setSubmitting] = useState(false);
 
-  // Estados da Lista de Espera
   const [showWaitingModal, setShowWaitingModal] = useState(false);
   const [waitingData, setWaitingData] = useState({ name: '', phone: '', notes: '' });
 
-  // Estados de Review
   const [reviewsData, setReviewsData] = useState({ average: 0, total: 0 });
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [newReview, setNewReview] = useState({ rating: 5, comment: '', name: '' });
@@ -47,7 +47,6 @@ const BookingPage = () => {
     if (slug) fetchCompanyData();
   }, [slug]);
 
-  // Busca Reviews Públicos
   useEffect(() => {
     if (slug) {
       api.get(`/api/reviews/public/${slug}`)
@@ -112,6 +111,7 @@ const BookingPage = () => {
 
   const handleOpenModal = (service) => {
     setSelectedService(service);
+    setSelectedProfessional(null); // Reseta profissional ao mudar serviço
     setStartDate(null);
     setFormData({ customerName: '', customerPhone: '' });
   };
@@ -125,13 +125,14 @@ const BookingPage = () => {
     setSubmitting(true);
     
     try {
-      // CORREÇÃO: URL correta e mapeamento de campos (customerName -> clientName)
       await api.post('/api/public/appointments', {
         date: startDate,
-        clientName: formData.customerName,   // Backend espera clientName
-        clientPhone: formData.customerPhone, // Backend espera clientPhone
+        clientName: formData.customerName,
+        clientPhone: formData.customerPhone,
         serviceId: selectedService.id,
         companyId: company.id,
+        // ALTERADO: Envia o profissional escolhido (ou null)
+        professionalId: selectedProfessional ? selectedProfessional.id : null,
         notes: "Agendamento pelo Site"
       });
 
@@ -142,7 +143,8 @@ const BookingPage = () => {
       if (company.whatsapp) {
         const cleanPhone = company.whatsapp.replace(/\D/g, '');
         const dateStr = format(savedDate, "dd/MM 'às' HH:mm");
-        const message = `Olá! Sou *${formData.customerName}*. \nAcabei de agendar *${selectedService.name}* para *${dateStr}*. \nPode confirmar?`;
+        const profName = selectedProfessional ? ` com ${selectedProfessional.name}` : '';
+        const message = `Olá! Sou *${formData.customerName}*. \nAcabei de agendar *${selectedService.name}*${profName} para *${dateStr}*. \nPode confirmar?`;
         const link = `https://wa.me/55${cleanPhone}?text=${encodeURIComponent(message)}`;
         window.open(link, '_blank');
       }
@@ -208,6 +210,8 @@ const BookingPage = () => {
 
   const isBasicPlan = company.plan?.slug?.toLowerCase() === 'basico';
   const canReceiveReviews = company.plan && ['avancado', 'premium'].includes(company.plan.slug.toLowerCase());
+  // ALTERADO: Verifica se o plano permite selecionar profissional
+  const canSelectProfessional = company.plan && ['avancado', 'premium'].includes(company.plan.slug.toLowerCase());
 
   return (
     <div className="booking-container">
@@ -311,6 +315,50 @@ const BookingPage = () => {
           <div className="modal-content">
             <h3 className="modal-title">Agendar: {selectedService.name}</h3>
             
+            {/* ALTERADO: Seleção de Profissional (se plano permitir) */}
+            {canSelectProfessional && (
+              <div style={{marginBottom: '1.5rem'}}>
+                <label style={{display: 'block', fontSize: '0.9rem', fontWeight: '600', color: '#334155', marginBottom: '8px'}}>Com quem você prefere?</label>
+                <div style={{display: 'flex', gap: '8px', flexWrap: 'wrap'}}>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedProfessional(null)}
+                    style={{
+                      padding: '8px 16px',
+                      borderRadius: '8px',
+                      border: selectedProfessional === null ? '2px solid #2563eb' : '1px solid #e2e8f0',
+                      background: selectedProfessional === null ? '#eff6ff' : 'white',
+                      color: selectedProfessional === null ? '#2563eb' : '#64748b',
+                      cursor: 'pointer',
+                      fontSize: '0.9rem',
+                      fontWeight: '500'
+                    }}
+                  >
+                    Sem preferência
+                  </button>
+                  {company.users && company.users.map(user => (
+                    <button
+                      key={user.id}
+                      type="button"
+                      onClick={() => setSelectedProfessional(user)}
+                      style={{
+                        padding: '8px 16px',
+                        borderRadius: '8px',
+                        border: selectedProfessional?.id === user.id ? '2px solid #2563eb' : '1px solid #e2e8f0',
+                        background: selectedProfessional?.id === user.id ? '#eff6ff' : 'white',
+                        color: selectedProfessional?.id === user.id ? '#2563eb' : '#64748b',
+                        cursor: 'pointer',
+                        fontSize: '0.9rem',
+                        fontWeight: '500'
+                      }}
+                    >
+                      {user.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <form onSubmit={handleConfirmBooking}>
               <div className="form-group">
                 <label>Seu Nome</label>

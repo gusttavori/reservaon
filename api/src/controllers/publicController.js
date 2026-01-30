@@ -49,7 +49,15 @@ exports.getCompanyBySlug = async (req, res) => {
   try {
     const company = await prisma.company.findUnique({
       where: { slug },
-      include: { services: true, plan: true, reviews: true }
+      include: { 
+        services: true, 
+        plan: true, 
+        reviews: true,
+        // ALTERADO: Inclui usuários para escolha do profissional (apenas campos seguros)
+        users: {
+          select: { id: true, name: true, role: true }
+        }
+      }
     });
     if (!company) return res.status(404).json({ error: "Empresa não encontrada" });
     res.json(company);
@@ -63,7 +71,8 @@ exports.createAppointment = async (req, res) => {
   try {
     console.log("Recebendo agendamento:", req.body);
 
-    const { companyId, serviceId, date, clientName, clientPhone, notes } = req.body;
+    // ALTERADO: Recebe professionalId
+    const { companyId, serviceId, date, clientName, clientPhone, notes, professionalId } = req.body;
 
     if (!companyId || !serviceId || !date || !clientName || !clientPhone) {
       return res.status(400).json({ error: "Preencha todos os campos obrigatórios." });
@@ -74,11 +83,13 @@ exports.createAppointment = async (req, res) => {
         companyId,
         serviceId,
         date: new Date(date),
-        clientName,   // Nome novo
-        clientPhone,  // Nome novo
+        clientName,
+        clientPhone,
         notes: notes || "Agendamento via Site",
         status: 'PENDING',
-        userId: null  // Explícito: sem usuário logado
+        userId: null,
+        // ALTERADO: Salva o ID do profissional escolhido (ou null)
+        professionalId: professionalId || null
       }
     });
 

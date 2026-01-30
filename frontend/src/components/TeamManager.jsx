@@ -1,12 +1,20 @@
 import { useState, useEffect } from 'react';
-import api from '../services/api'; // Importante
+import api from '../services/api';
 import { UserPlus, Trash2, Mail, Shield } from 'lucide-react';
 import './TeamManager.css';
 
 const TeamManager = () => {
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [newMember, setNewMember] = useState({ name: '', email: '', password: '' });
+  
+  // ALTERADO: Estado inicial com permissões
+  const [newMember, setNewMember] = useState({ 
+    name: '', 
+    email: '', 
+    password: '',
+    canViewFinancials: false,
+    canManageAgenda: true
+  });
 
   useEffect(() => {
     fetchTeam();
@@ -28,7 +36,7 @@ const TeamManager = () => {
     try {
       await api.post('/api/team', newMember);
       alert("Membro adicionado! Ele pode logar com a senha definida.");
-      setNewMember({ name: '', email: '', password: '' });
+      setNewMember({ name: '', email: '', password: '', canViewFinancials: false, canManageAgenda: true });
       fetchTeam();
     } catch (error) {
       alert(error.response?.data?.error || "Erro ao adicionar membro.");
@@ -78,6 +86,30 @@ const TeamManager = () => {
                 value={newMember.password} onChange={e => setNewMember({...newMember, password: e.target.value})}
               />
             </div>
+
+            {/* NOVOS CHECKBOXES DE PERMISSÃO */}
+            <div className="form-group" style={{marginTop: '1rem'}}>
+              <label style={{marginBottom: '0.5rem', display: 'block'}}>Permissões:</label>
+              <div style={{display: 'flex', flexDirection: 'column', gap: '8px'}}>
+                <label style={{display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.9rem'}}>
+                  <input 
+                    type="checkbox"
+                    checked={newMember.canManageAgenda}
+                    onChange={e => setNewMember({...newMember, canManageAgenda: e.target.checked})}
+                  />
+                  Gerenciar Agenda
+                </label>
+                <label style={{display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.9rem'}}>
+                  <input 
+                    type="checkbox"
+                    checked={newMember.canViewFinancials}
+                    onChange={e => setNewMember({...newMember, canViewFinancials: e.target.checked})}
+                  />
+                  Ver Financeiro
+                </label>
+              </div>
+            </div>
+
             <button type="submit" className="btn-add-team">Cadastrar Membro</button>
           </form>
         </div>

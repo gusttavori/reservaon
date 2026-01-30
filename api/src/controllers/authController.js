@@ -36,7 +36,8 @@ exports.register = async (req, res) => {
           name: companyName,
           slug: finalSlug,
           planId: plan.id,
-          subscriptionStatus: 'ACTIVE'
+          // ALTERADO: Inicia como TRIAL (Período de testes)
+          subscriptionStatus: 'TRIAL' 
         }
       });
 
@@ -46,7 +47,9 @@ exports.register = async (req, res) => {
           email,
           password: hashedPassword,
           role: 'OWNER',
-          companyId: company.id
+          companyId: company.id,
+          canViewFinancials: true,
+          canManageAgenda: true
         }
       });
 
@@ -60,7 +63,7 @@ exports.register = async (req, res) => {
     }
 
     return res.status(201).json({ 
-      message: "Conta criada com sucesso!", 
+      message: "Conta criada com sucesso! Aproveite seus 7 dias de teste.", 
       user: {
         id: result.user.id,
         name: result.user.name,
@@ -122,7 +125,9 @@ exports.login = async (req, res) => {
         slug: user.company.slug,
         role: user.role,
         subscriptionStatus: user.company.subscriptionStatus,
-        planSlug: user.company.plan.slug
+        planSlug: user.company.plan.slug,
+        canViewFinancials: user.canViewFinancials,
+        canManageAgenda: user.canManageAgenda
       } 
     });
 
@@ -133,7 +138,8 @@ exports.login = async (req, res) => {
 };
 
 exports.createProfessional = async (req, res) => {
-  const { name, email, password } = req.body;
+  // ALTERADO: Recebe as permissões do corpo da requisição
+  const { name, email, password, canViewFinancials, canManageAgenda } = req.body;
   const companyId = req.user.companyId;
 
   try {
@@ -148,7 +154,10 @@ exports.createProfessional = async (req, res) => {
         email,
         password: hashedPassword,
         role: 'PROFESSIONAL',
-        companyId
+        companyId,
+        // ALTERADO: Salva as permissões
+        canViewFinancials: canViewFinancials || false,
+        canManageAgenda: canManageAgenda !== undefined ? canManageAgenda : true
       }
     });
 
