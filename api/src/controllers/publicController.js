@@ -1,7 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-// GET: Catálogo
 exports.getCompanies = async (req, res) => {
   const { search } = req.query;
   try {
@@ -45,7 +44,6 @@ exports.getCompanies = async (req, res) => {
   }
 };
 
-// GET: Empresa por Slug
 exports.getCompanyBySlug = async (req, res) => {
   const { slug } = req.params;
   try {
@@ -61,15 +59,14 @@ exports.getCompanyBySlug = async (req, res) => {
   }
 };
 
-// POST: Criar Agendamento (A função que será chamada)
 exports.createAppointment = async (req, res) => {
   try {
-    console.log("Recebendo agendamento:", req.body); // Log para debug no Render
+    console.log("Recebendo agendamento:", req.body);
 
     const { companyId, serviceId, date, clientName, clientPhone, notes } = req.body;
 
     if (!companyId || !serviceId || !date || !clientName || !clientPhone) {
-      return res.status(400).json({ error: "Preencha todos os campos." });
+      return res.status(400).json({ error: "Preencha todos os campos obrigatórios." });
     }
 
     const appointment = await prisma.appointment.create({
@@ -77,16 +74,17 @@ exports.createAppointment = async (req, res) => {
         companyId,
         serviceId,
         date: new Date(date),
-        clientName,
-        clientPhone,
-        notes,
-        status: 'PENDING'
+        clientName,   // Nome novo
+        clientPhone,  // Nome novo
+        notes: notes || "Agendamento via Site",
+        status: 'PENDING',
+        userId: null  // Explícito: sem usuário logado
       }
     });
 
     res.status(201).json(appointment);
   } catch (error) {
-    console.error("Erro ao criar agendamento:", error);
-    res.status(500).json({ error: "Erro interno ao salvar agendamento." });
+    console.error("ERRO CRÍTICO NO AGENDAMENTO:", error);
+    res.status(500).json({ error: "Erro interno ao salvar. O banco recusou os dados." });
   }
 };
