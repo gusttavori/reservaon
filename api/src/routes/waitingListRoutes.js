@@ -3,10 +3,11 @@ const router = express.Router();
 const waitingListController = require('../controllers/waitingListController');
 const authMiddleware = require('../middlewares/authMiddleware');
 
-router.post('/public', waitingListController.addToWaitingList);
+// Rota Pública (Sem Auth)
+router.post('/public', waitingListController.joinWaitingList);
 
-router.use(authMiddleware);
-router.get('/', waitingListController.getWaitingList);
-router.put('/:id', waitingListController.updateStatus);
+// Rotas Privadas (Com Auth)
+router.get('/', authMiddleware, waitingListController.getWaitingList);
+router.delete('/:id', authMiddleware, waitingListController.removeFromList);
 
 module.exports = router;
