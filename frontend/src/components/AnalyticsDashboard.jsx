@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../services/api'; // IMPORTANTE: Usa o serviço configurado
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, LineChart, Line, Legend
@@ -19,25 +19,23 @@ const AnalyticsDashboard = () => {
 
   const fetchData = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const res = await axios.get('http://localhost:3000/api/analytics', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      // CORREÇÃO: Usa 'api' em vez de axios direto para pegar a URL correta (Render)
+      const res = await api.get('/api/analytics');
       setData(res.data);
     } catch (error) {
-      console.error("Erro ao carregar analytics");
+      console.error("Erro ao carregar analytics", error);
     } finally {
       setLoading(false);
     }
   };
 
-  if (loading) return <p>Carregando dados...</p>;
-  if (!data) return <p>Sem dados disponíveis.</p>;
+  if (loading) return <p className="loading-text">Carregando inteligência de dados...</p>;
+  if (!data) return <p className="error-text">Sem dados disponíveis para o período.</p>;
 
   return (
     <div className="analytics-container">
       
-      {/* KPI Cards */}
+      {/* KPI Cards (Indicadores Principais) */}
       <div className="kpi-grid">
         <div className="kpi-card">
           <span>Faturamento Total (Mês)</span>

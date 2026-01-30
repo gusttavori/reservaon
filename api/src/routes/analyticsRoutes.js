@@ -3,7 +3,7 @@ const router = express.Router();
 const analyticsController = require('../controllers/analyticsController');
 const authMiddleware = require('../middlewares/authMiddleware');
 
-// Garante que a função existe antes de passar para a rota
-router.get('/advanced', authMiddleware, analyticsController.getAdvancedStats);
+// Define a rota raiz '/' para que '/api/analytics' chame a função correta
+router.get('/', authMiddleware, analyticsController.getAdvancedStats);
 
 module.exports = router;

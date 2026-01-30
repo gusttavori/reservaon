@@ -25,7 +25,6 @@ exports.getAdvancedStats = async (req, res) => {
       }
     });
 
-    // A) Receita por Serviço
     const servicesMap = {};
     appointments.forEach(app => {
       const name = app.service.name;
@@ -39,7 +38,6 @@ exports.getAdvancedStats = async (req, res) => {
       value: servicesMap[key]
     })).sort((a, b) => b.value - a.value);
 
-    // B) Agendamentos por Profissional
     const teamMap = {};
     appointments.forEach(app => {
       const name = app.professional ? app.professional.name : 'Sem Profissional';
@@ -52,7 +50,6 @@ exports.getAdvancedStats = async (req, res) => {
       count: teamMap[key]
     })).sort((a, b) => b.count - a.count);
 
-    // C) Faturamento Diário
     const dailyMap = {};
     const daysInMonth = endDate.getDate();
     for (let i = 1; i <= daysInMonth; i++) {
@@ -69,11 +66,13 @@ exports.getAdvancedStats = async (req, res) => {
       value: dailyMap[key]
     }));
 
+    const totalRevenue = revenueByService.reduce((acc, curr) => acc + curr.value, 0);
+
     res.json({
       revenueByService,
       appsByProfessional,
       dailyRevenue,
-      totalRevenue: revenueByService.reduce((acc, curr) => acc + curr.value, 0),
+      totalRevenue,
       totalAppointments: appointments.length
     });
 
