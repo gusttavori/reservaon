@@ -1,8 +1,8 @@
 require('dotenv').config();
 const express = require('express');
-const cors = require('cors'); // Agora temos certeza que está instalado!
+const cors = require('cors'); 
 
-// Importação das Rotas
+// --- IMPORTAÇÃO DAS ROTAS ---
 const authRoutes = require('./src/routes/authRoutes'); 
 const serviceRoutes = require('./src/routes/serviceRoutes');
 const publicRoutes = require('./src/routes/publicRoutes');
@@ -16,25 +16,27 @@ const reviewRoutes = require('./src/routes/reviewRoutes');
 const analyticsRoutes = require('./src/routes/analyticsRoutes');
 const logRoutes = require('./src/routes/logRoutes');
 const uploadRoutes = require('./src/routes/uploadRoutes');
+
+// Webhook Controller (Importação direta para rota específica)
 const webhookController = require('./src/controllers/webhookController');
 
 const app = express();
 
-// --- CORREÇÃO DEFINITIVA (Bala de Prata) ---
-// O asterisco '*' permite que QUALQUER site acesse sua API.
-// Isso elimina 100% dos erros de bloqueio de origem.
+// --- CONFIGURAÇÃO CORS (Permite acesso de qualquer lugar) ---
 app.use(cors({
   origin: '*', 
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
 }));
 
-// Webhook
+// --- ROTA DE WEBHOOK (Deve vir ANTES do express.json) ---
+// O Stripe precisa do corpo "cru" (raw) para validar a assinatura
 app.post('/api/webhook', express.raw({ type: 'application/json' }), webhookController.handleWebhook);
 
+// Middleware Global para JSON
 app.use(express.json());
 
-// Rotas
+// --- DEFINIÇÃO DAS ROTAS ---
 app.use('/api/auth', authRoutes);
 app.use('/api/services', serviceRoutes);
 app.use('/api/public', publicRoutes);
@@ -49,7 +51,7 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/api/logs', logRoutes);
 app.use('/api/upload', uploadRoutes);
 
-// Health Check
+// Health Check (Rota Raiz para verificar se está vivo)
 app.get('/', (req, res) => {
   res.json({ 
     status: "API Online 🚀", 
@@ -58,6 +60,7 @@ app.get('/', (req, res) => {
   });
 });
 
+// Inicialização
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🔥 Servidor rodando na porta ${PORT}`);
