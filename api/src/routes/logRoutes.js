@@ -3,7 +3,6 @@ const router = express.Router();
 const logController = require('../controllers/logController');
 const authMiddleware = require('../middlewares/authMiddleware');
 
-router.use(authMiddleware);
-router.get('/', logController.getLogs);
+router.get('/', authMiddleware, logController.getActivityLogs);
 
 module.exports = router;

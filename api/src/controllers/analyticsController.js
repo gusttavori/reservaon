@@ -6,7 +6,6 @@ exports.getAdvancedStats = async (req, res) => {
   const { month, year } = req.query;
 
   try {
-    // Lógica robusta de data
     const now = new Date();
     const targetMonth = month ? parseInt(month) - 1 : now.getMonth();
     const targetYear = year ? parseInt(year) : now.getFullYear();
@@ -14,7 +13,6 @@ exports.getAdvancedStats = async (req, res) => {
     const startDate = new Date(targetYear, targetMonth, 1);
     const endDate = new Date(targetYear, targetMonth + 1, 0, 23, 59, 59);
 
-    // 1. Buscamos todos os agendamentos concluídos ou confirmados do período
     const appointments = await prisma.appointment.findMany({
       where: {
         companyId,
@@ -27,8 +25,6 @@ exports.getAdvancedStats = async (req, res) => {
       }
     });
 
-    // 2. Processamento de Dados (Agregações)
-    
     // A) Receita por Serviço
     const servicesMap = {};
     appointments.forEach(app => {
