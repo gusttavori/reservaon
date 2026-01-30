@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-// Detecta automaticamente o ambiente
+// Detecta automaticamente: se estiver no seu PC (localhost), usa localhost.
+// Se estiver na nuvem (Render/Vercel), usa a URL do servidor.
 const API_URL = window.location.hostname === 'localhost'
   ? 'http://localhost:3000' 
   : 'https://reservaon-lv6w.onrender.com';
