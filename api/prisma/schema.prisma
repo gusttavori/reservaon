@@ -57,7 +57,13 @@ model User {
   role                 String         @default("OWNER")
   companyId            String
   company              Company        @relation(fields: [companyId], references: [id])
+  
+  // Relacionamento 1: Agendamentos onde o usuário é o PRESTADOR (Profissional)
   appointments         Appointment[]  @relation("ProfessionalAppointments")
+  
+  // Relacionamento 2: Agendamentos onde o usuário é o CLIENTE (quem agendou) - CORREÇÃO AQUI
+  clientAppointments   Appointment[]  
+  
   refreshTokens        RefreshToken[]
   activityLogs         ActivityLog[]
   resetPasswordToken   String?
@@ -89,14 +95,13 @@ model Service {
   appointments Appointment[]
 }
 
-// --- AQUI ESTÁ A MUDANÇA CRÍTICA ---
 model Appointment {
   id             String   @id @default(uuid())
   date           DateTime
   status         String   @default("PENDING")
   notes          String?
   
-  // Mudamos de 'customer' para 'client' para padronizar
+  // Campos para cliente sem cadastro
   clientName     String?  
   clientPhone    String?  
 
@@ -106,10 +111,11 @@ model Appointment {
   serviceId      String
   service        Service  @relation(fields: [serviceId], references: [id])
 
+  // Relacionamento com Profissional
   professionalId String?
   professional   User?    @relation("ProfessionalAppointments", fields: [professionalId], references: [id])
 
-  // userId PRECISA ser opcional (?) para agendamento público funcionar
+  // Relacionamento com Usuário Cliente (Logado)
   userId         String?
   user           User?    @relation(fields: [userId], references: [id])
 
