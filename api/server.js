@@ -17,12 +17,13 @@ const analyticsRoutes = require('./src/routes/analyticsRoutes');
 const logRoutes = require('./src/routes/logRoutes');
 const uploadRoutes = require('./src/routes/uploadRoutes');
 
-// Webhook Controller (Importação direta para rota específica)
+// Webhook Controller
 const webhookController = require('./src/controllers/webhookController');
 
 const app = express();
 
-// --- CONFIGURAÇÃO CORS (Permite acesso de qualquer lugar) ---
+// --- CONFIGURAÇÃO CORS ---
+// Permite acesso de qualquer origem (*) para evitar bloqueios
 app.use(cors({
   origin: '*', 
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
@@ -30,10 +31,9 @@ app.use(cors({
 }));
 
 // --- ROTA DE WEBHOOK (Deve vir ANTES do express.json) ---
-// O Stripe precisa do corpo "cru" (raw) para validar a assinatura
 app.post('/api/webhook', express.raw({ type: 'application/json' }), webhookController.handleWebhook);
 
-// Middleware Global para JSON
+// Middleware JSON
 app.use(express.json());
 
 // --- DEFINIÇÃO DAS ROTAS ---
@@ -51,12 +51,11 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/api/logs', logRoutes);
 app.use('/api/upload', uploadRoutes);
 
-// Health Check (Rota Raiz para verificar se está vivo)
+// Health Check
 app.get('/', (req, res) => {
   res.json({ 
     status: "API Online 🚀", 
-    message: "Bem-vindo ao Backend do ReservaON",
-    cors: "Habilitado para todos (*)"
+    message: "Bem-vindo ao Backend do ReservaON"
   });
 });
 

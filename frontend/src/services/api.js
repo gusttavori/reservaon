@@ -1,7 +1,9 @@
 import axios from 'axios';
 
-// URL EXATA do seu Render (Hardcoded para produção)
-const API_URL = 'https://reservaon-lv6w.onrender.com';
+// Detecta automaticamente o ambiente
+const API_URL = window.location.hostname === 'localhost'
+  ? 'http://localhost:3000' 
+  : 'https://reservaon-lv6w.onrender.com';
 
 const api = axios.create({
   baseURL: API_URL,

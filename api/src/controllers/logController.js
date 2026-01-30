@@ -1,7 +1,7 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-exports.getLogs = async (req, res) => {
+exports.getActivityLogs = async (req, res) => {
   const companyId = req.user.companyId;
 
   try {
@@ -11,15 +11,16 @@ exports.getLogs = async (req, res) => {
       include: { plan: true }
     });
 
-    if (company.plan.slug !== 'premium') {
-      return res.status(403).json({ error: "Funcionalidade exclusiva do plano Premium." });
+    // Opcional: Se quiser liberar para todos por enquanto, comente o if abaixo
+    if (company.plan.slug !== 'premium' && company.plan.slug !== 'avancado') {
+       return res.status(403).json({ error: "Funcionalidade exclusiva do plano Premium." });
     }
 
     const logs = await prisma.activityLog.findMany({
       where: { companyId },
-      include: { user: { select: { name: true } } }, // Inclui nome de quem fez
+      include: { user: { select: { name: true } } }, // Inclui nome de quem fez a ação
       orderBy: { createdAt: 'desc' },
-      take: 50 // Limita aos últimos 50 eventos
+      take: 50
     });
 
     res.json(logs);

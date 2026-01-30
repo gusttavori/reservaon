@@ -1,7 +1,7 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-// Público: Cliente envia avaliação
+// ROTA PÚBLICA: Cliente envia avaliação
 exports.createReview = async (req, res) => {
   const { companyId, rating, comment, customerName } = req.body;
 
@@ -24,7 +24,7 @@ exports.createReview = async (req, res) => {
   }
 };
 
-// Privado: Dono vê todas as avaliações
+// ROTA PRIVADA: Dono vê todas as avaliações no Dashboard
 exports.getReviews = async (req, res) => {
   const companyId = req.user.companyId;
   try {
@@ -43,7 +43,7 @@ exports.getReviews = async (req, res) => {
   }
 };
 
-// Público: Página de Agendamento busca média e últimos comentários
+// ROTA PÚBLICA: Página de Agendamento busca média e últimos comentários
 exports.getPublicReviews = async (req, res) => {
   const { slug } = req.params;
 
@@ -58,7 +58,7 @@ exports.getPublicReviews = async (req, res) => {
     const reviews = await prisma.review.findMany({
       where: { companyId: company.id },
       orderBy: { createdAt: 'desc' },
-      take: 5 // Retorna apenas as 5 últimas para não pesar
+      take: 5 
     });
 
     // Agregação para média geral

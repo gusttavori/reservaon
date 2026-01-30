@@ -1,7 +1,8 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-exports.addToWaitingList = async (req, res) => {
+// ROTA PÚBLICA
+exports.joinWaitingList = async (req, res) => {
   const { companyId, customerName, phone, serviceName, notes } = req.body;
 
   try {
@@ -21,6 +22,7 @@ exports.addToWaitingList = async (req, res) => {
   }
 };
 
+// ROTA PRIVADA
 exports.getWaitingList = async (req, res) => {
   const companyId = req.user.companyId;
   try {
@@ -37,21 +39,19 @@ exports.getWaitingList = async (req, res) => {
   }
 };
 
-exports.updateStatus = async (req, res) => {
+// ROTA PRIVADA: Remover/Atualizar
+exports.removeFromList = async (req, res) => {
   const { id } = req.params;
-  const { status } = req.body;
   const companyId = req.user.companyId;
 
   try {
+    // Verifica se pertence à empresa
     const entry = await prisma.waitingList.findFirst({ where: { id, companyId } });
     if (!entry) return res.status(404).json({ error: "Item não encontrado." });
 
-    const updated = await prisma.waitingList.update({
-      where: { id },
-      data: { status }
-    });
-    res.json(updated);
+    await prisma.waitingList.delete({ where: { id } });
+    res.json({ message: "Removido da lista." });
   } catch (error) {
-    res.status(500).json({ error: "Erro ao atualizar status." });
+    res.status(500).json({ error: "Erro ao remover." });
   }
 };

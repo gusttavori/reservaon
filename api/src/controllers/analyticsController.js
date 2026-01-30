@@ -1,9 +1,9 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-exports.getAnalytics = async (req, res) => {
+exports.getAdvancedStats = async (req, res) => {
   const companyId = req.user.companyId;
-  const { month, year } = req.query; // Filtro de data (opcional, usaremos mês atual se não enviado)
+  const { month, year } = req.query;
 
   try {
     const startDate = month && year 
@@ -18,7 +18,7 @@ exports.getAnalytics = async (req, res) => {
     const appointments = await prisma.appointment.findMany({
       where: {
         companyId,
-        status: 'COMPLETED',
+        status: { in: ['COMPLETED', 'CONFIRMED'] }, // Considera confirmados também para projeção
         date: { gte: startDate, lte: endDate }
       },
       include: {
@@ -29,7 +29,7 @@ exports.getAnalytics = async (req, res) => {
 
     // 2. Processamento de Dados (Agregações)
     
-    // A) Receita por Serviço (Pizza)
+    // A) Receita por Serviço
     const servicesMap = {};
     appointments.forEach(app => {
       const name = app.service.name;
@@ -43,12 +43,12 @@ exports.getAnalytics = async (req, res) => {
       value: servicesMap[key]
     })).sort((a, b) => b.value - a.value);
 
-    // B) Agendamentos por Profissional (Barras)
+    // B) Agendamentos por Profissional
     const teamMap = {};
     appointments.forEach(app => {
       const name = app.professional ? app.professional.name : 'Sem Profissional';
       if (!teamMap[name]) teamMap[name] = 0;
-      teamMap[name] += 1; // Contamos a quantidade
+      teamMap[name] += 1;
     });
 
     const appsByProfessional = Object.keys(teamMap).map(key => ({
@@ -56,9 +56,8 @@ exports.getAnalytics = async (req, res) => {
       count: teamMap[key]
     })).sort((a, b) => b.count - a.count);
 
-    // C) Faturamento Diário (Linha)
+    // C) Faturamento Diário
     const dailyMap = {};
-    // Inicializa o mês zerado (para o gráfico não ficar buraco)
     const daysInMonth = endDate.getDate();
     for (let i = 1; i <= daysInMonth; i++) {
       dailyMap[i] = 0;
