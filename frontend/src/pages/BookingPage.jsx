@@ -16,7 +16,6 @@ const BookingPage = () => {
   const [loading, setLoading] = useState(true);
   
   const [selectedService, setSelectedService] = useState(null);
-  // ALTERADO: Estado para o profissional selecionado
   const [selectedProfessional, setSelectedProfessional] = useState(null);
   const [startDate, setStartDate] = useState(null);
   
@@ -125,13 +124,20 @@ const BookingPage = () => {
     setSubmitting(true);
     
     try {
+      // --- CORREÇÃO DE FUSO HORÁRIO ---
+      // Criamos uma cópia da data para não alterar o estado visual
+      const dateToSend = new Date(startDate);
+      // Subtraímos o offset do fuso horário para que o .toISOString() mantenha a hora local
+      // Ex: Se for 16:00 BRT, isso garante que o JSON enviado seja "2025-XX-XXT16:00:00.000Z"
+      // evitando que o servidor receba 19:00 (UTC) e bloqueie o agendamento.
+      dateToSend.setMinutes(dateToSend.getMinutes() - dateToSend.getTimezoneOffset());
+      
       await api.post('/api/public/appointments', {
-        date: startDate,
+        date: dateToSend, // Usamos a data ajustada
         clientName: formData.customerName,
         clientPhone: formData.customerPhone,
         serviceId: selectedService.id,
         companyId: company.id,
-        // ALTERADO: Envia o profissional escolhido (ou null)
         professionalId: selectedProfessional ? selectedProfessional.id : null,
         notes: "Agendamento pelo Site"
       });
@@ -210,7 +216,6 @@ const BookingPage = () => {
 
   const isBasicPlan = company.plan?.slug?.toLowerCase() === 'basico';
   const canReceiveReviews = company.plan && ['avancado', 'premium'].includes(company.plan.slug.toLowerCase());
-  // ALTERADO: Verifica se o plano permite selecionar profissional
   const canSelectProfessional = company.plan && ['avancado', 'premium'].includes(company.plan.slug.toLowerCase());
 
   return (
@@ -315,7 +320,6 @@ const BookingPage = () => {
           <div className="modal-content">
             <h3 className="modal-title">Agendar: {selectedService.name}</h3>
             
-            {/* ALTERADO: Seleção de Profissional (se plano permitir) */}
             {canSelectProfessional && (
               <div style={{marginBottom: '1.5rem'}}>
                 <label style={{display: 'block', fontSize: '0.9rem', fontWeight: '600', color: '#334155', marginBottom: '8px'}}>Com quem você prefere?</label>
