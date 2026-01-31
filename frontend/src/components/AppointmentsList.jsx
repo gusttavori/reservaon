@@ -4,7 +4,7 @@ import { Calendar, Phone, Plus, X, Scissors, User, ChevronDown, Clock } from 'lu
 import DatePicker, { registerLocale } from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import ptBR from 'date-fns/locale/pt-BR';
-import './AppointmentsList.css'; // Certifique-se de ter este CSS criado
+import './AppointmentsList.css';
 
 registerLocale('pt-BR', ptBR);
 
@@ -50,8 +50,8 @@ const AppointmentsList = () => {
     ));
 
     try {
-      // Tenta usar a rota específica de status, se falhar, tenta o update genérico
-      await api.put(`/api/appointments/${id}`, { status: newStatus });
+      // CORREÇÃO: Adicionado '/status' no final para bater com seu backend
+      await api.put(`/api/appointments/${id}/status`, { status: newStatus });
     } catch (error) {
       console.error("Erro ao atualizar status:", error);
       alert("Erro ao atualizar status. Verifique sua conexão.");
