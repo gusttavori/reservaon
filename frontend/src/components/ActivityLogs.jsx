@@ -17,7 +17,7 @@ const ActivityLogs = () => {
     try {
       // CORREÇÃO 2: Não precisa mais pegar o token manualmente nem digitar localhost.
       // O 'api.js' já coloca o token e decide se é localhost ou produção.
-      const res = await api.get('/logs');
+      const res = await api.get('/api/logs');
       
       setLogs(res.data);
     } catch (error) {
