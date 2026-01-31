@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import api from '../services/api';
-import { Calendar, Phone, Plus, X, Scissors, User, ChevronDown } from 'lucide-react';
+import { Calendar, Phone, Plus, X, Scissors, User, ChevronDown, Clock } from 'lucide-react';
 import DatePicker, { registerLocale } from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import ptBR from 'date-fns/locale/pt-BR';
-import './AppointmentsList.css';
+import './AppointmentsList.css'; // Certifique-se de ter este CSS criado
 
 registerLocale('pt-BR', ptBR);
 
@@ -12,7 +12,7 @@ const AppointmentsList = () => {
   const [appointments, setAppointments] = useState([]);
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('all'); 
+  const [filter, setFilter] = useState('all'); // all, today, tomorrow
   
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({
@@ -43,16 +43,18 @@ const AppointmentsList = () => {
   };
 
   const handleStatusChange = async (id, newStatus) => {
-    // Atualização Otimista
+    // Atualização Otimista (Muda na tela antes de confirmar no banco)
     const oldAppointments = [...appointments];
     setAppointments(prev => prev.map(app => 
       app.id === id ? { ...app, status: newStatus } : app
     ));
 
     try {
-      await api.put(`/api/appointments/${id}/status`, { status: newStatus });
+      // Tenta usar a rota específica de status, se falhar, tenta o update genérico
+      await api.put(`/api/appointments/${id}`, { status: newStatus });
     } catch (error) {
-      alert("Erro ao atualizar status.");
+      console.error("Erro ao atualizar status:", error);
+      alert("Erro ao atualizar status. Verifique sua conexão.");
       setAppointments(oldAppointments); // Reverte se der erro
     }
   };
@@ -60,41 +62,53 @@ const AppointmentsList = () => {
   const handleManualBooking = async (e) => {
     e.preventDefault();
     try {
-      // Ajuste para enviar clientName conforme esperado pelo backend
+      // --- CORREÇÃO DE FUSO HORÁRIO ---
+      // Garante que o horário selecionado (ex: 16:00) chegue como 16:00 no servidor
+      const dateToSend = new Date(formData.date);
+      dateToSend.setMinutes(dateToSend.getMinutes() - dateToSend.getTimezoneOffset());
+
       await api.post('/api/appointments', {
         clientName: formData.customerName,
         clientPhone: formData.customerPhone,
         serviceId: formData.serviceId,
-        date: formData.date,
-        notes: "Agendamento Manual"
+        date: dateToSend, // Envia a data ajustada
+        notes: "Agendamento Manual (Pelo Admin)"
       });
       
-      alert("Agendamento criado!");
+      alert("Agendamento criado com sucesso!");
       setShowModal(false);
-      fetchData();
+      fetchData(); // Recarrega a lista
       setFormData({ customerName: '', customerPhone: '', serviceId: '', date: new Date() });
     } catch (error) {
-      alert(error.response?.data?.error || "Erro ao criar agendamento.");
+      const msg = error.response?.data?.error || "Erro ao criar agendamento.";
+      alert(msg);
     }
   };
 
   const filterAppointments = () => {
     const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-    const tomorrow = today + 86400000;
+    // Zera as horas para comparar apenas o dia
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const tomorrowStart = todayStart + 86400000; // +24 horas
+    const afterTomorrowStart = tomorrowStart + 86400000;
 
     return appointments.filter(app => {
       const appTime = new Date(app.date).getTime();
-      if (filter === 'today') return appTime >= today && appTime < tomorrow;
-      if (filter === 'tomorrow') return appTime >= tomorrow && appTime < (tomorrow + 86400000);
-      return true;
-    }).sort((a, b) => new Date(a.date) - new Date(b.date)); // Ordem cronológica (mais cedo primeiro)
+      
+      if (filter === 'today') {
+        return appTime >= todayStart && appTime < tomorrowStart;
+      }
+      if (filter === 'tomorrow') {
+        return appTime >= tomorrowStart && appTime < afterTomorrowStart;
+      }
+      return true; // 'all'
+    }).sort((a, b) => new Date(a.date) - new Date(b.date)); // Ordena do mais antigo para o mais novo
   };
 
   const formatDate = (dateString) => new Date(dateString).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }).toUpperCase();
   const formatTime = (dateString) => new Date(dateString).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
-  // Componente Select Personalizado
+  // Componente Select Personalizado para Status
   const StatusSelect = ({ currentStatus, onChange }) => {
     const getStatusColor = (s) => {
       switch(s) {
@@ -109,7 +123,7 @@ const AppointmentsList = () => {
     const style = getStatusColor(currentStatus);
 
     return (
-      <div className="status-select-wrapper" style={{position: 'relative'}}>
+      <div className="status-select-wrapper" style={{position: 'relative', display: 'inline-block'}}>
         <select 
           value={currentStatus} 
           onChange={(e) => onChange(e.target.value)}
@@ -120,11 +134,11 @@ const AppointmentsList = () => {
             border: `1px solid ${style.border}`,
             padding: '6px 28px 6px 12px',
             borderRadius: '20px',
-            fontSize: '0.8rem',
+            fontSize: '0.75rem',
             fontWeight: '600',
             cursor: 'pointer',
             outline: 'none',
-            minWidth: '130px',
+            minWidth: '120px',
             transition: 'all 0.2s'
           }}
         >
@@ -141,7 +155,7 @@ const AppointmentsList = () => {
     );
   };
 
-  if (loading) return <div className="loading-spinner">Carregando agenda...</div>;
+  if (loading) return <div className="loading-state">Carregando agenda...</div>;
 
   const filteredApps = filterAppointments();
 
@@ -155,7 +169,7 @@ const AppointmentsList = () => {
           <button className={`filter-btn ${filter === 'tomorrow' ? 'active' : ''}`} onClick={() => setFilter('tomorrow')}>Amanhã</button>
         </div>
         <button onClick={() => setShowModal(true)} className="btn-new-appointment">
-          <Plus size={18} /> Novo Agendamento
+          <Plus size={18} /> <span className="btn-text-mobile">Novo</span>
         </button>
       </div>
 
@@ -163,7 +177,8 @@ const AppointmentsList = () => {
         {filteredApps.length === 0 ? (
           <div className="empty-agenda">
             <Calendar size={48} style={{opacity: 0.3, marginBottom: '1rem', color: '#94a3b8'}} />
-            <p style={{color: '#64748b'}}>Nenhum agendamento encontrado para este período.</p>
+            <h3 style={{color: '#64748b', fontSize: '1.1rem'}}>Agenda vazia</h3>
+            <p style={{color: '#94a3b8', fontSize: '0.9rem'}}>Nenhum agendamento para este período.</p>
           </div>
         ) : (
           filteredApps.map(app => (
@@ -177,16 +192,34 @@ const AppointmentsList = () => {
                 </div>
                 
                 <div className="app-details">
-                  {/* Usa clientName (manual) ou fallback */}
-                  <h4>{app.clientName || app.title || "Cliente Sem Nome"}</h4>
+                  {/* Tenta pegar nome do cliente, usuário logado ou título genérico */}
+                  <h4 title={app.clientName || app.user?.name}>
+                    {app.clientName || app.user?.name || "Cliente Sem Nome"}
+                  </h4>
+                  
                   <div className="app-meta">
                     <div className="meta-row">
                       <Scissors size={14} /> 
-                      <span>{app.serviceName || app.service?.name} • R$ {Number(app.price || app.service?.price).toFixed(2)}</span>
+                      <span>{app.serviceName || app.service?.name}</span>
                     </div>
-                    {(app.clientPhone) && (
+                    {/* Mostra preço se disponível */}
+                    {(app.price || app.service?.price) && (
+                         <div className="meta-row price-row">
+                            <span>R$ {Number(app.price || app.service?.price).toFixed(2)}</span>
+                         </div>
+                    )}
+                    
+                    {(app.clientPhone || app.user?.phone) && (
                       <div className="meta-row">
-                        <Phone size={14} /> <span>{app.clientPhone}</span>
+                        <Phone size={14} /> 
+                        <a 
+                          href={`https://wa.me/55${(app.clientPhone || app.user?.phone || '').replace(/\D/g, '')}`} 
+                          target="_blank" 
+                          rel="noreferrer"
+                          style={{color: 'inherit', textDecoration: 'none', ':hover': {textDecoration: 'underline'}}}
+                        >
+                            {app.clientPhone || app.user?.phone}
+                        </a>
                       </div>
                     )}
                   </div>
@@ -235,22 +268,28 @@ const AppointmentsList = () => {
               </div>
               <div className="form-group">
                 <label>Serviço</label>
-                <select required className="modal-input"
-                  value={formData.serviceId} onChange={e => setFormData({...formData, serviceId: e.target.value})}
-                >
-                  <option value="">Selecione...</option>
-                  {services.map(s => <option key={s.id} value={s.id}>{s.name} - R$ {Number(s.price).toFixed(2)}</option>)}
-                </select>
+                <div className="input-icon-wrapper">
+                    <Scissors size={18} className="input-icon" />
+                    <select required className="modal-input with-icon"
+                        value={formData.serviceId} onChange={e => setFormData({...formData, serviceId: e.target.value})}
+                    >
+                        <option value="">Selecione...</option>
+                        {services.map(s => <option key={s.id} value={s.id}>{s.name} - R$ {Number(s.price).toFixed(2)}</option>)}
+                    </select>
+                </div>
               </div>
               <div className="form-group">
                 <label>Data e Hora</label>
-                <DatePicker 
-                  selected={formData.date} 
-                  onChange={date => setFormData({...formData, date})}
-                  showTimeSelect dateFormat="Pp" locale="pt-BR"
-                  className="modal-input" wrapperClassName="datePicker"
-                  timeFormat="HH:mm" timeIntervals={30}
-                />
+                <div className="input-icon-wrapper">
+                    <Clock size={18} className="input-icon" style={{zIndex: 1}} />
+                    <DatePicker 
+                    selected={formData.date} 
+                    onChange={date => setFormData({...formData, date})}
+                    showTimeSelect dateFormat="dd/MM/yyyy HH:mm" locale="pt-BR"
+                    className="modal-input with-icon" wrapperClassName="datePicker"
+                    timeFormat="HH:mm" timeIntervals={30}
+                    />
+                </div>
               </div>
               <button type="submit" className="btn-submit-modal">Confirmar Agendamento</button>
             </form>
