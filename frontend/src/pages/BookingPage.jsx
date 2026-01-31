@@ -17,7 +17,10 @@ const BookingPage = () => {
   
   const [selectedService, setSelectedService] = useState(null);
   const [selectedProfessional, setSelectedProfessional] = useState(null);
-  const [startDate, setStartDate] = useState(null);
+  
+  // Datas selecionadas
+  const [startDate, setStartDate] = useState(null); // Para agendamento normal
+  const [waitingDate, setWaitingDate] = useState(null); // NOVO: Para lista de espera
   
   const [formData, setFormData] = useState({
     customerName: '',
@@ -26,7 +29,7 @@ const BookingPage = () => {
   const [submitting, setSubmitting] = useState(false);
 
   const [showWaitingModal, setShowWaitingModal] = useState(false);
-  const [waitingData, setWaitingData] = useState({ name: '', phone: '', notes: '' });
+  const [waitingData, setWaitingData] = useState({ name: '', phone: '' }); // Removi 'notes' do estado inicial pois será gerado pela data
 
   const [reviewsData, setReviewsData] = useState({ average: 0, total: 0 });
   const [showReviewModal, setShowReviewModal] = useState(false);
@@ -110,7 +113,7 @@ const BookingPage = () => {
 
   const handleOpenModal = (service) => {
     setSelectedService(service);
-    setSelectedProfessional(null); // Reseta profissional ao mudar serviço
+    setSelectedProfessional(null);
     setStartDate(null);
     setFormData({ customerName: '', customerPhone: '' });
   };
@@ -124,16 +127,12 @@ const BookingPage = () => {
     setSubmitting(true);
     
     try {
-      // --- CORREÇÃO DE FUSO HORÁRIO ---
-      // Criamos uma cópia da data para não alterar o estado visual
+      // Correção de Fuso Horário para Agendamento
       const dateToSend = new Date(startDate);
-      // Subtraímos o offset do fuso horário para que o .toISOString() mantenha a hora local
-      // Ex: Se for 16:00 BRT, isso garante que o JSON enviado seja "2025-XX-XXT16:00:00.000Z"
-      // evitando que o servidor receba 19:00 (UTC) e bloqueie o agendamento.
       dateToSend.setMinutes(dateToSend.getMinutes() - dateToSend.getTimezoneOffset());
       
       await api.post('/api/public/appointments', {
-        date: dateToSend, // Usamos a data ajustada
+        date: dateToSend,
         clientName: formData.customerName,
         clientPhone: formData.customerPhone,
         serviceId: selectedService.id,
@@ -165,19 +164,32 @@ const BookingPage = () => {
     }
   };
 
+  // --- FUNÇÃO ATUALIZADA DA LISTA DE ESPERA ---
   const handleJoinWaitingList = async (e) => {
     e.preventDefault();
+    
+    if (!waitingDate) {
+      alert("Por favor, selecione a data e horário que você deseja ser encaixado.");
+      return;
+    }
+
     try {
+      // Formata a data escolhida para enviar no campo de observação
+      const formattedDate = format(waitingDate, "dd/MM/yyyy 'às' HH:mm");
+      const noteMessage = `Desejo vaga para: ${formattedDate}`;
+
       await api.post('/api/waiting-list/public', {
         companyId: company.id,
         customerName: waitingData.name,
         phone: waitingData.phone,
         serviceName: selectedService ? selectedService.name : 'Qualquer serviço',
-        notes: waitingData.notes
+        notes: noteMessage // Envia a data formatada como nota
       });
-      alert("Você entrou na lista de espera! Avisaremos se surgir uma vaga.");
+
+      alert("Você entrou na lista de espera! Avisaremos se surgir uma vaga nesta data.");
       setShowWaitingModal(false);
-      setWaitingData({ name: '', phone: '', notes: '' });
+      setWaitingData({ name: '', phone: '' });
+      setWaitingDate(null); // Reseta a data
     } catch (error) {
       alert("Erro ao entrar na lista.");
     }
@@ -422,11 +434,14 @@ const BookingPage = () => {
         </div>
       )}
 
-      {/* MODAL DE LISTA DE ESPERA */}
+      {/* MODAL DE LISTA DE ESPERA (ATUALIZADO COM SELETOR DE DATA) */}
       {showWaitingModal && (
         <div className="modal-overlay">
           <div className="modal-content">
             <h3 className="modal-title">Entrar na Lista de Espera</h3>
+            <p style={{fontSize: '0.9rem', color: '#64748b', marginBottom: '1rem'}}>
+              Selecione o dia e horário que você gostaria de ser encaixado.
+            </p>
             <form onSubmit={handleJoinWaitingList}>
               <div className="form-group">
                 <label>Seu Nome</label>
@@ -440,12 +455,29 @@ const BookingPage = () => {
                   value={waitingData.phone} onChange={e => setWaitingData({...waitingData, phone: e.target.value})}
                 />
               </div>
+              
+              {/* CAMPO DE DATA DA LISTA DE ESPERA */}
               <div className="form-group">
-                <label>Preferência (Opcional)</label>
-                <input className="form-input" placeholder="Ex: Só posso depois das 18h"
-                  value={waitingData.notes} onChange={e => setWaitingData({...waitingData, notes: e.target.value})}
-                />
+                <label>Data e Hora Desejada</label>
+                <div className="custom-datepicker-wrapper">
+                  <DatePicker
+                    selected={waitingDate}
+                    onChange={(date) => setWaitingDate(date)}
+                    showTimeSelect
+                    locale="pt-BR"
+                    dateFormat="d 'de' MMMM 'às' HH:mm"
+                    timeFormat="HH:mm"
+                    timeIntervals={30}
+                    minDate={new Date()}
+                    filterDate={isWorkDay}
+                    minTime={getOpenTime(waitingDate || new Date())}
+                    maxTime={getCloseTime(waitingDate || new Date())}
+                    placeholderText="Selecione quando quer ser encaixado..."
+                    className="form-input"
+                  />
+                </div>
               </div>
+
               <div className="modal-actions">
                 <button type="button" className="btn-cancel" onClick={() => setShowWaitingModal(false)}>Cancelar</button>
                 <button type="submit" className="btn-confirm">Entrar na Lista</button>
