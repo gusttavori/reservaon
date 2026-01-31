@@ -5,13 +5,19 @@ const prisma = new PrismaClient();
 exports.listAppointments = async (req, res) => {
   const companyId = req.user.companyId;
   const userId = req.user.userId;
-  const userRole = req.user.role;
+  const userRole = req.user.role; // Certifique-se que o role vem no token
 
   try {
     const whereClause = { companyId };
 
-    // Se for funcionário, pode descomentar para ver apenas os dele
-    // if (userRole === 'PROFESSIONAL') whereClause.professionalId = userId;
+    // --- LÓGICA DE VISIBILIDADE ---
+    // Se NÃO for o dono (ou seja, é um funcionário/profissional)
+    if (userRole !== 'OWNER') {
+      whereClause.OR = [
+        { professionalId: userId }, // Vê apenas os seus agendamentos
+        { professionalId: null }    // OU vê os agendamentos "Sem Preferência" (Livres)
+      ];
+    }
 
     const appointments = await prisma.appointment.findMany({
       where: whereClause,
@@ -40,7 +46,8 @@ exports.listAppointments = async (req, res) => {
       
       serviceName: appt.service.name,
       price: appt.service.price,
-      professionalName: appt.professional?.name
+      // Se for null, o frontend vai interpretar como "Sem preferência"
+      professionalName: appt.professional?.name || null
     }));
 
     return res.json(formatted);
@@ -51,8 +58,6 @@ exports.listAppointments = async (req, res) => {
   }
 };
 
-// ... Mantenha as outras funções (createAppointmentInternal, updateStatus, deleteAppointment) iguais ...
-// Se precisar que eu repita o arquivo todo, me avise, mas apenas a 'listAppointments' afeta a visualização.
 exports.createAppointmentInternal = async (req, res) => {
   const { date, clientName, clientPhone, serviceId, notes, professionalId } = req.body;
   const companyId = req.user.companyId;

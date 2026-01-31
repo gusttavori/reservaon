@@ -50,7 +50,7 @@ const AppointmentsList = () => {
     ));
 
     try {
-      // CORREÇÃO: Adicionado '/status' no final para bater com seu backend
+      // Usa rota específica de status
       await api.put(`/api/appointments/${id}/status`, { status: newStatus });
     } catch (error) {
       console.error("Erro ao atualizar status:", error);
@@ -202,6 +202,20 @@ const AppointmentsList = () => {
                       <Scissors size={14} /> 
                       <span>{app.serviceName || app.service?.name}</span>
                     </div>
+
+                    {/* MOSTRAR PROFISSIONAL OU "SEM PREFERÊNCIA" */}
+                    <div className="meta-row" style={{
+                      color: app.professionalName ? '#64748b' : '#16a34a', // Verde se for livre
+                      fontWeight: app.professionalName ? 'normal' : '600'
+                    }}>
+                        <User size={14} /> 
+                        <span>
+                           {app.professionalName 
+                             ? `Prof.: ${app.professionalName}` 
+                             : "Sem preferência (Livre)"}
+                        </span>
+                    </div>
+
                     {/* Mostra preço se disponível */}
                     {(app.price || app.service?.price) && (
                          <div className="meta-row price-row">
