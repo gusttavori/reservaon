@@ -137,12 +137,12 @@ const Dashboard = () => {
                 <div className="share-info">
                   <h3>
                     {isBasicPlan ? <Contact size={24} /> : <Zap size={24} />}
-                    {isBasicPlan ? "Seu Cartão Digital" : "Agendamento Online Ativo 🚀"}
+                    {isBasicPlan ? "Seu Cartão Digital" : "Agendamento Online Ativo"}
                   </h3>
                   <p>
                     {isBasicPlan 
                       ? "Envie este link para clientes verem seus serviços." 
-                      : "Compartilhe este link e deixe seus clientes agendarem sozinhos 24h por dia."}
+                      : "Compartilhe este link e deixe seus clientes agendarem 24h por dia."}
                   </p>
                 </div>
 
@@ -237,7 +237,6 @@ const Dashboard = () => {
 
   return (
     <div className="dashboard-layout">
-      {/* SIDEBAR ORIGINAL RESTAURADA */}
       <aside className="sidebar">
         <div className="brand-container">
            {/* LOGO SIMPLIFICADA SEM CONTAINER REDONDO (COMO PEDIDO 'ORIGINAL') */}
@@ -289,7 +288,7 @@ const Dashboard = () => {
         </nav>
         
         <div className="user-mini-profile">
-          <div className="avatar">{user.name.charAt(0)}</div>
+          {/* Avatar removido conforme solicitado */}
           <div className="user-info-text">
             <p className="user-name">{user.name}</p>
             <p className="user-role">{user.role === 'OWNER' ? 'Dono' : 'Equipe'}</p>
