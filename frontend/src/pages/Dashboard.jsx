@@ -91,25 +91,12 @@ const Dashboard = () => {
   if (!user) return null;
 
   const isOwner = user.role === 'OWNER';
-  
-  // CORREÇÃO: Permissões rigorosas
-  // O usuário deve ter a permissão explícita no banco ou ser DONO
   const canViewFinancials = isOwner || user.canViewFinancials === true;
   const canManageAgenda = isOwner || user.canManageAgenda === true;
   
   const isBasicPlan = user.planSlug === 'basico';
   const isAdvancedOrPremium = ['avancado', 'premium'].includes(user.planSlug);
   const isPremium = user.planSlug === 'premium';
-
-  const getPlanLabel = (slug) => {
-    const labels = {
-      'basico': 'Básico',
-      'profissional': 'Profissional',
-      'avancado': 'Avançado',
-      'premium': 'Premium'
-    };
-    return labels[slug] || 'Plano';
-  };
 
   if (!isActive) {
     return (
@@ -140,30 +127,32 @@ const Dashboard = () => {
       case 'overview':
         return (
           <div className="animate-fade-in">
-            <div style={{marginBottom: '2rem', textAlign: 'left'}}>
-              <h1 style={{fontSize: '1.8rem', color: '#1e293b', marginBottom: '0.5rem'}}>Olá, {user.name} 👋</h1>
-              <p style={{color: '#64748b', margin: 0}}>Gerencie a <strong>{user.company}</strong></p>
+            <div className="dashboard-welcome">
+              <h1>Olá, {user.name} 👋</h1>
+              <p>Gerencie a <strong>{user.company}</strong></p>
             </div>
             
             {user.slug && (
-              <div className="share-card" style={{
-                background: isBasicPlan ? 'linear-gradient(135deg, #1e293b 0%, #334155 100%)' : 'linear-gradient(135deg, #000000 0%, #5b5b5b 100%)',
-                color: 'white', padding: '1.5rem', borderRadius: '12px', marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', boxShadow: '0 4px 15px rgba(0,0,0,0.1)'
-              }}>
+              <div className={`share-card ${isBasicPlan ? 'basic' : 'premium'}`}>
                 <div className="share-info">
-                  <h3 style={{display: 'flex', alignItems: 'center', gap: '8px', margin: '0 0 8px 0'}}>
+                  <h3>
                     {isBasicPlan ? <Contact size={24} /> : <Zap size={24} />}
-                    {isBasicPlan ? "Seu Cartão de Visitas Digital" : "Agendamento Online Ativo 🚀"}
+                    {isBasicPlan ? "Seu Cartão Digital" : "Agendamento Online Ativo 🚀"}
                   </h3>
-                  <p style={{margin: 0, opacity: 0.9}}>
-                    {isBasicPlan ? "Envie este link para clientes verem seus serviços e entrarem em contato." : "Compartilhe este link e deixe seus clientes agendarem sozinhos 24h por dia."}
+                  <p>
+                    {isBasicPlan 
+                      ? "Envie este link para clientes verem seus serviços." 
+                      : "Compartilhe este link e deixe seus clientes agendarem sozinhos 24h por dia."}
                   </p>
                 </div>
-                <div className="link-box" style={{background: 'rgba(255,255,255,0.15)', padding: '8px 16px', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '10px'}}>
-                  <ExternalLink size={16} color="rgba(255,255,255,0.8)"/>
-                  <span className="link-url" style={{fontSize: '0.9rem', color: 'white'}}>reservaon.com/book/{user.slug.slice(0, 10)}...</span>
-                  <button onClick={copyLink} className="btn-copy" style={{background: 'white', color: isBasicPlan ? '#1e293b' : '#000000', border: 'none', borderRadius: '6px', padding: '6px 12px', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px'}}>
-                    <Copy size={16}/> Copiar
+
+                <div className="link-box-container">
+                  <div className="link-display">
+                    <ExternalLink size={16} className="link-icon"/>
+                    <span className="link-url">reservaon.com/book/{user.slug}</span>
+                  </div>
+                  <button onClick={copyLink} className="btn-copy">
+                    <Copy size={16}/> <span>Copiar</span>
                   </button>
                 </div>
               </div>
@@ -234,7 +223,6 @@ const Dashboard = () => {
     }
   };
 
-  // Componente Auxiliar para Telas Bloqueadas
   const LockScreen = ({ title, premium }) => (
     <div className="animate-fade-in">
       <h2 className="section-title">{title}</h2>
@@ -250,22 +238,23 @@ const Dashboard = () => {
   return (
     <div className="dashboard-layout">
       <aside className="sidebar">
-        <div className="brand">
-          <img src={logoImg} alt="ReservaON Logo" className="brand-logo" />
+        <div className="brand-container">
+          <div className="brand-logo-wrapper">
+             <img src={logoImg} alt="ReservaON Logo" className="brand-logo" />
+          </div>
         </div>
-        <nav style={{flex: 1}}>
+        
+        <nav className="sidebar-nav">
           <div className={`nav-item ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => setActiveTab('overview')}>
             <LayoutDashboard size={20} /><span>Visão Geral</span>
           </div>
           
-          {/* CORREÇÃO: Menu Agenda só aparece se tiver permissão */}
           {canManageAgenda && (
             <div className={`nav-item ${activeTab === 'agenda' ? 'active' : ''}`} onClick={() => setActiveTab('agenda')}>
               <Calendar size={20} /><span>Agenda</span>
             </div>
           )}
           
-          {/* CORREÇÃO: Menu Financeiro só aparece se tiver permissão */}
           {canViewFinancials && (
             <div className={`nav-item ${activeTab === 'financial' ? 'active' : ''}`} onClick={() => setActiveTab('financial')}>
               <DollarSign size={20} /><span>Financeiro</span>
@@ -301,17 +290,16 @@ const Dashboard = () => {
         
         <div className="user-mini-profile">
           <div className="avatar">{user.name.charAt(0)}</div>
-          <div style={{flex: 1, overflow: 'hidden'}}>
-            <p style={{margin: 0, fontWeight: 'bold', fontSize: '0.9rem', whiteSpace: 'nowrap'}}>{user.name}</p>
-            <p style={{margin: 0, fontSize: '0.75rem', color: '#94a3b8'}}>
-              {user.role === 'OWNER' ? 'Dono' : 'Equipe'}
-            </p>
+          <div className="user-info-text">
+            <p className="user-name">{user.name}</p>
+            <p className="user-role">{user.role === 'OWNER' ? 'Dono' : 'Equipe'}</p>
           </div>
-          <button onClick={handleLogout} title="Sair" style={{background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer'}}>
+          <button onClick={handleLogout} title="Sair" className="btn-logout">
             <LogOut size={18} />
           </button>
         </div>
       </aside>
+      
       <main className="main-content">
         {renderContent()}
       </main>

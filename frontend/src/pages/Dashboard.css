@@ -7,45 +7,69 @@
   --surface: #ffffff;
   --border: #e2e8f0;
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
 }
 
 .dashboard-layout {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
   background-color: var(--bg-color);
   font-family: 'Inter', sans-serif;
+  overflow: hidden; /* Importante para layout fixo */
 }
 
-/* --- SIDEBAR --- */
+/* --- SIDEBAR & LOGO --- */
 .sidebar {
   width: 260px;
   background-color: var(--sidebar-bg);
   color: white;
   display: flex;
   flex-direction: column;
-  padding: 1.5rem;
-  position: fixed;
-  height: 100vh;
+  border-right: 1px solid #1e293b;
+  transition: all 0.3s ease;
   z-index: 10;
-  transition: all 0.3s ease; /* Transição suave para responsividade */
 }
 
-/* Ajuste do container da marca */
-.brand {
-  margin-bottom: 3rem;
+.brand-container {
+  padding: 2rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 1rem;
+}
+
+/* DESTAQUE DA LOGO */
+.brand-logo-wrapper {
+  width: 90px;
+  height: 90px;
+  background: white; /* Fundo branco para destacar a logo */
+  border-radius: 50%;
+  padding: 12px;
   display: flex;
   align-items: center;
-  justify-content: flex-start; /* Alinha a logo à esquerda no desktop */
-  padding: 0 0.5rem;
+  justify-content: center;
+  box-shadow: 0 0 15px rgba(37, 99, 235, 0.4); /* Glow azul sutil */
+  border: 4px solid rgba(255, 255, 255, 0.1);
+  transition: transform 0.3s ease;
 }
 
-/* Nova classe para a imagem da logo */
+.brand-logo-wrapper:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 25px rgba(37, 99, 235, 0.6);
+}
+
 .brand-logo {
-  max-width: 100%;
-  height: auto;
-  max-height: 50px; /* Altura máxima para não ficar gigante */
+  width: 100%;
+  height: 100%;
   object-fit: contain;
+}
+
+.sidebar-nav {
+  flex: 1;
+  overflow-y: auto; /* Permite scroll se o menu for grande */
+  padding: 0 1rem;
 }
 
 .nav-item {
@@ -54,13 +78,11 @@
   gap: 12px;
   padding: 12px 16px;
   color: #94a3b8;
-  text-decoration: none;
   border-radius: 8px;
-  margin-bottom: 0.5rem;
+  margin-bottom: 4px;
   transition: 0.2s;
   cursor: pointer;
-  user-select: none;
-  white-space: nowrap; /* Impede quebra de texto na animação */
+  white-space: nowrap;
 }
 
 .nav-item:hover {
@@ -74,18 +96,18 @@
   font-weight: 500;
 }
 
+/* --- MINI PERFIL DO USUÁRIO --- */
 .user-mini-profile {
   margin-top: auto;
-  padding-top: 1rem;
+  padding: 1.5rem;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
   align-items: center;
-  gap: 10px;
-  overflow: hidden; /* Esconde conteúdo que sobrar no mobile */
+  gap: 12px;
 }
 
 .avatar {
-  min-width: 40px; /* Garante que o avatar não amasse */
+  min-width: 40px;
   height: 40px;
   background: var(--primary);
   border-radius: 50%;
@@ -96,119 +118,171 @@
   color: white;
 }
 
+.user-info-text {
+  flex: 1;
+  overflow: hidden;
+}
+
+.user-name {
+  margin: 0;
+  font-weight: 600;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-role {
+  margin: 0;
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.btn-logout {
+  background: none;
+  border: none;
+  color: #ef4444;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.2s;
+}
+
+.btn-logout:hover {
+  opacity: 0.8;
+}
+
 /* --- CONTEÚDO PRINCIPAL --- */
 .main-content {
   flex: 1;
-  margin-left: 260px;
   padding: 2rem 3rem;
   overflow-y: auto;
   text-align: left;
-  transition: all 0.3s ease;
 }
 
-.top-header {
+.dashboard-welcome {
   margin-bottom: 2rem;
-  text-align: left;
 }
 
-.welcome-text h1 {
+.dashboard-welcome h1 {
   font-size: 1.8rem;
   color: var(--text-primary);
+  margin: 0 0 4px 0;
+}
+
+.dashboard-welcome p {
+  color: var(--text-secondary);
   margin: 0;
 }
 
-.welcome-text p {
-  color: var(--text-secondary);
-  margin-top: 4px;
-}
-
 .section-title {
-  font-size: 1.4rem;
+  font-size: 1.5rem;
   margin-bottom: 1.5rem;
   color: var(--text-primary);
-  text-align: left;
+  font-weight: 700;
 }
 
-/* --- SHARE CARD (VISÃO GERAL) --- */
+/* --- SHARE CARD (RESPONSIVO) --- */
 .share-card {
-  background: linear-gradient(120deg, #1e40af 0%, #3b82f6 100%);
   border-radius: 16px;
   padding: 2rem;
-  color: white;
+  margin-bottom: 2rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.4);
+  gap: 1.5rem;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+  color: white;
   position: relative;
   overflow: hidden;
-  margin-bottom: 2.5rem;
-  text-align: left;
 }
 
-.share-card::before {
-  content: '';
-  position: absolute;
-  top: -50%;
-  left: -10%;
-  width: 300px;
-  height: 300px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 50%;
-  filter: blur(40px);
+.share-card.basic {
+  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+}
+
+.share-card.premium {
+  background: linear-gradient(135deg, #111827 0%, #374151 100%);
+  border: 1px solid #374151;
 }
 
 .share-info h3 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   margin: 0 0 0.5rem 0;
-  font-size: 1.2rem;
+  font-size: 1.25rem;
 }
 
 .share-info p {
   margin: 0;
   opacity: 0.9;
-  font-size: 0.95rem;
-  text-align: left;
+  line-height: 1.5;
+  max-width: 500px;
 }
 
-.link-box {
-  background: rgba(0, 0, 0, 0.2);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  padding: 8px 12px 8px 16px;
-  border-radius: 10px;
+/* Container Link + Botão */
+.link-box-container {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 6px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
-  gap: 12px;
-  z-index: 1;
+  gap: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  max-width: 100%;
+}
+
+.link-display {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  overflow: hidden;
 }
 
 .link-url {
-  font-family: 'Fira Code', monospace;
-  font-size: 0.9rem;
-  color: #e0f2fe;
+  font-family: monospace;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis; /* Corta link longo */
+  max-width: 250px;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.link-icon {
+  color: rgba(255, 255, 255, 0.6);
+  flex-shrink: 0;
 }
 
 .btn-copy {
   background: white;
-  color: var(--primary);
+  color: #0f172a;
   border: none;
-  padding: 8px 16px;
   border-radius: 8px;
-  font-weight: 700;
-  font-size: 0.85rem;
+  padding: 10px 16px;
+  font-weight: 600;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
   transition: all 0.2s;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
 .btn-copy:hover {
-  transform: scale(1.05);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  background: #f1f5f9;
+  transform: translateY(-1px);
 }
 
 /* --- ESTATÍSTICAS --- */
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 1.5rem;
 }
 
@@ -222,13 +296,11 @@
   gap: 1.2rem;
   box-shadow: var(--shadow-sm);
   transition: transform 0.2s;
-  text-align: left;
 }
 
 .stat-card:hover {
   transform: translateY(-3px);
   box-shadow: var(--shadow-md);
-  border-color: #cbd5e1;
 }
 
 .stat-icon {
@@ -238,22 +310,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.5rem;
   color: white;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
-.bg-blue {
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
-}
-
-.bg-green {
-  background: linear-gradient(135deg, #10b981, #059669);
-}
-
-.bg-purple {
-  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
-}
+.bg-blue { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+.bg-green { background: linear-gradient(135deg, #10b981, #059669); }
+.bg-purple { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
 
 .stat-card h4 {
   margin: 0;
@@ -261,7 +323,6 @@
   font-size: 0.85rem;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
 }
 
 .stat-value {
@@ -269,22 +330,18 @@
   font-size: 1.75rem;
   font-weight: 800;
   color: var(--text-primary);
-  letter-spacing: -1px;
 }
 
-/* --- TELAS DE BLOQUEIO / EMPTY STATES --- */
+/* --- TELAS DE BLOQUEIO --- */
 .lock-screen-container {
-  text-align: left;
-  padding: 4rem 2rem;
+  padding: 3rem;
   background: white;
   border-radius: 16px;
   border: 1px solid #e2e8f0;
-  margin-top: 20px;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
 }
-
 .lock-icon-wrapper {
   background: #fef3c7;
   width: 60px;
@@ -295,89 +352,102 @@
   justify-content: center;
   margin-bottom: 1.5rem;
 }
-
-.lock-title {
-  margin: 0 0 10px 0;
-  font-size: 1.25rem;
-  color: #1e293b;
-}
-
-.lock-description {
-  color: #64748b;
-  max-width: 500px;
-  margin: 0 0 20px 0;
-  line-height: 1.6;
-}
+.lock-title { margin: 0 0 10px 0; font-size: 1.25rem; color: #1e293b; }
+.lock-description { color: #64748b; margin: 0 0 20px 0; line-height: 1.6; }
 
 /* --- ANIMAÇÕES --- */
-.animate-fade-in {
-  animation: fadeIn 0.3s ease-in-out;
-}
-
+.animate-fade-in { animation: fadeIn 0.3s ease-in-out; }
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-/* --- RESPONSIVIDADE (TABLET/MOBILE) --- */
-@media (max-width: 1024px) {
+/* --- RESPONSIVIDADE (MOBILE) --- */
+@media (max-width: 900px) {
+  .dashboard-layout {
+    flex-direction: column;
+  }
+
   .sidebar {
-    width: 78px; /* Largura reduzida */
-    padding: 1rem 0.75rem;
-    align-items: center; /* Centraliza tudo na sidebar estreita */
-  }
-
-  .brand {
-    justify-content: center; /* Centraliza a logo */
-    padding: 0;
-    margin-bottom: 2rem;
-  }
-
-  /* Ajusta a logo para mobile */
-  .brand-logo {
-    max-height: 32px; /* Logo menor na sidebar estreita */
-  }
-
-  /* Esconde os textos */
-  .nav-item span,
-  .user-mini-profile div,
-  .user-mini-profile button {
-    display: none;
-  }
-
-  .nav-item {
-    justify-content: center;
-    padding: 12px;
+    position: relative;
     width: 100%;
+    height: auto;
+    flex-direction: row;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    border-bottom: 1px solid #1e293b;
+    border-right: none;
+    justify-content: space-between;
+  }
+
+  .brand-container {
+    padding: 0;
+    margin: 0;
+    border: none;
   }
   
-  .user-mini-profile {
-    justify-content: center;
-    width: 100%;
+  .brand-logo-wrapper {
+    width: 50px;
+    height: 50px;
+    padding: 5px;
+    border-width: 2px;
   }
+
+  /* No mobile, escondemos o menu lateral e usamos um botão ou apenas ícones */
+  /* Neste exemplo, simplifico escondendo o menu expandido e mostrando apenas o perfil */
+  .sidebar-nav {
+    display: none; 
+  }
+
+  .user-mini-profile {
+    border: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .user-info-text { display: none; } /* Esconde nome no mobile topo */
 
   .main-content {
-    margin-left: 78px;
+    margin: 0;
     padding: 1.5rem;
+    padding-bottom: 80px; /* Espaço pro scroll */
   }
+}
 
-  /* Ajustes de layout mobile */
+@media (max-width: 768px) {
+  /* Card de link responsivo */
   .share-card {
     flex-direction: column;
-    gap: 1rem;
     align-items: flex-start;
+    padding: 1.5rem;
+    gap: 1.5rem;
   }
-  .share-info, .link-box {
+
+  .link-box-container {
     width: 100%;
+    flex-direction: column; /* Empilha */
+    padding: 12px;
+    gap: 12px;
+    background: rgba(0,0,0,0.3);
   }
-  .link-box {
-    box-sizing: border-box;
-    justify-content: space-between;
+
+  .link-display {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .link-url {
+    max-width: 100%;
+    font-size: 0.85rem;
+  }
+
+  .btn-copy {
+    width: 100%; /* Botão largura total - FÁCIL DE CLICAR */
+    justify-content: center;
+    padding: 12px;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr; /* Um card por linha */
   }
 }
