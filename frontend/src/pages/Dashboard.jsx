@@ -237,11 +237,11 @@ const Dashboard = () => {
 
   return (
     <div className="dashboard-layout">
+      {/* SIDEBAR ORIGINAL RESTAURADA */}
       <aside className="sidebar">
         <div className="brand-container">
-          <div className="brand-logo-wrapper">
-             <img src={logoImg} alt="ReservaON Logo" className="brand-logo" />
-          </div>
+           {/* LOGO SIMPLIFICADA SEM CONTAINER REDONDO (COMO PEDIDO 'ORIGINAL') */}
+           <img src={logoImg} alt="ReservaON Logo" className="brand-logo" />
         </div>
         
         <nav className="sidebar-nav">

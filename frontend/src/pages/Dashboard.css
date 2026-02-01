@@ -18,64 +18,45 @@
   overflow: hidden; 
 }
 
-/* --- SIDEBAR & LOGO --- */
+/* --- SIDEBAR ORIGINAL --- */
 .sidebar {
   width: 260px;
   background-color: var(--sidebar-bg);
   color: white;
   display: flex;
   flex-direction: column;
+  padding: 1.5rem;
   border-right: 1px solid #1e293b;
   transition: all 0.3s ease;
-  z-index: 20; /* Aumentei o z-index para garantir que fique acima */
+  z-index: 20;
 }
 
 .brand-container {
-  padding: 2rem 1.5rem;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: center; /* Centraliza a logo */
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  margin-bottom: 1rem;
 }
 
-/* CORREÇÃO DA LOGO: Fundo translúcido para contraste em vez de branco */
-.brand-logo-wrapper {
-  width: 90px;
-  height: 90px;
-  background: rgba(255, 255, 255, 0.1); /* Translúcido para não sumir a logo branca */
-  border-radius: 50%;
-  padding: 15px; /* Mais padding */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 0 15px rgba(37, 99, 235, 0.4); 
-  border: 2px solid rgba(255, 255, 255, 0.2);
-  transition: transform 0.3s ease;
-}
-
-.brand-logo-wrapper:hover {
-  transform: scale(1.05);
-  box-shadow: 0 0 25px rgba(37, 99, 235, 0.6);
-}
-
+/* LOGO GRANDE E VISÍVEL */
 .brand-logo {
-  width: 100%;
-  height: 100%;
+  max-width: 100%;
+  height: auto;
+  max-height: 60px; /* Aumentado para dar destaque */
   object-fit: contain;
 }
 
 .sidebar-nav {
   flex: 1;
   overflow-y: auto; 
-  padding: 0 1rem;
+  padding-right: 5px;
 }
 
-/* Estilo da barra de rolagem fina para o menu */
+/* Barra de rolagem fina e discreta */
 .sidebar-nav::-webkit-scrollbar {
   width: 4px;
-  height: 4px;
 }
 .sidebar-nav::-webkit-scrollbar-thumb {
   background: rgba(255,255,255,0.2);
@@ -109,11 +90,12 @@
 /* --- MINI PERFIL --- */
 .user-mini-profile {
   margin-top: auto;
-  padding: 1.5rem;
+  padding-top: 1.5rem;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
   align-items: center;
   gap: 12px;
+  overflow: hidden;
 }
 
 .avatar {
@@ -171,7 +153,7 @@
 .dashboard-welcome p { color: var(--text-secondary); margin: 0; }
 .section-title { font-size: 1.5rem; margin-bottom: 1.5rem; color: var(--text-primary); font-weight: 700; }
 
-/* --- SHARE CARD --- */
+/* --- SHARE CARD (COM A CORREÇÃO DE RESPONSIVIDADE) --- */
 .share-card {
   border-radius: 16px;
   padding: 2rem;
@@ -182,6 +164,7 @@
   gap: 1.5rem;
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
   color: white;
+  position: relative;
   overflow: hidden;
 }
 .share-card.basic { background: linear-gradient(135deg, #1e293b 0%, #334155 100%); }
@@ -190,6 +173,7 @@
 .share-info h3 { display: flex; align-items: center; gap: 10px; margin: 0 0 0.5rem 0; font-size: 1.25rem; }
 .share-info p { margin: 0; opacity: 0.9; line-height: 1.5; max-width: 500px; }
 
+/* Container Link + Botão */
 .link-box-container {
   background: rgba(255, 255, 255, 0.1);
   padding: 6px;
@@ -239,85 +223,41 @@
 .animate-fade-in { animation: fadeIn 0.3s ease-in-out; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-/* --- RESPONSIVIDADE CORRIGIDA (MOBILE) --- */
-@media (max-width: 900px) {
-  .dashboard-layout {
-    flex-direction: column; /* Coloca sidebar no topo */
-  }
-
-  /* SIDEBAR VIRA UM HEADER FIXO */
+/* --- RESPONSIVIDADE (TABLET/MOBILE) --- */
+@media (max-width: 1024px) {
   .sidebar {
-    position: sticky;
-    top: 0;
-    width: 100%;
-    height: auto;
-    flex-direction: row; /* Itens em linha, mas com quebra */
-    flex-wrap: wrap; /* Permite que o menu vá para a linha de baixo */
-    padding: 0;
-    border-bottom: 1px solid #1e293b;
-    border-right: none;
-    justify-content: space-between;
+    width: 78px; /* Recolhe a sidebar para mostrar só ícones */
+    padding: 1rem 0.5rem;
     align-items: center;
   }
 
-  /* LOGO (Esquerda) */
-  .brand-container {
-    order: 1; /* Primeiro */
-    padding: 10px 15px;
-    border: none;
-    margin: 0;
-  }
-  
-  .brand-logo-wrapper {
-    width: 50px;
-    height: 50px;
-    padding: 8px;
-    background: transparent; /* Remove fundo para logo aparecer */
-    border: none;
-    box-shadow: none; /* Remove brilho excessivo no mobile */
-  }
-
-  /* PERFIL (Direita) */
-  .user-mini-profile {
-    order: 2; /* Segundo */
-    border: none;
-    padding: 10px 15px;
-    margin: 0;
-    width: auto;
-  }
-  
-  .user-info-text { display: none; } /* Esconde nome no topo para economizar espaço */
-
-  /* NAVEGAÇÃO (Linha de Baixo - Rolagem Horizontal) */
-  .sidebar-nav {
-    order: 3; /* Terceiro (Linha de baixo) */
-    width: 100%;
-    display: flex; /* EXIBE O MENU! */
-    flex-direction: row;
-    overflow-x: auto; /* Rolagem horizontal */
-    padding: 10px;
-    background: rgba(0,0,0,0.2); /* Fundo um pouco mais escuro para separar */
-    gap: 8px;
-    white-space: nowrap;
+  /* Esconde texto no modo recolhido */
+  .nav-item span, 
+  .user-info-text {
+    display: none;
   }
 
   .nav-item {
-    flex-shrink: 0; /* Impede que os botões encolham */
-    margin: 0;
-    font-size: 0.85rem;
-    padding: 8px 12px;
+    justify-content: center;
+    padding: 12px;
+    width: 100%;
+  }
+
+  .brand-logo {
+    max-height: 40px; /* Logo um pouco menor no modo ícone */
   }
 
   .main-content {
-    margin: 0;
+    margin-left: 0; /* Remove margem automática se necessário */
     padding: 1.5rem;
-    padding-bottom: 80px; 
   }
 }
 
+/* RESPONSIVIDADE DO CARD E MOBILE PEQUENO */
 @media (max-width: 768px) {
+  /* 1. Ajuste do Card de Link (O que você pediu) */
   .share-card {
-    flex-direction: column;
+    flex-direction: column; /* Empilha texto e link */
     align-items: flex-start;
     padding: 1.5rem;
     gap: 1.5rem;
@@ -325,15 +265,15 @@
 
   .link-box-container {
     width: 100%;
-    flex-direction: column;
+    flex-direction: column; /* Empilha o link e o botão */
     padding: 12px;
     gap: 12px;
-    background: rgba(0,0,0,0.3);
+    background: rgba(0,0,0,0.3); /* Fundo mais escuro para destaque */
   }
 
   .link-display {
     width: 100%;
-    justify-content: center;
+    justify-content: center; /* Centraliza o link */
   }
 
   .link-url {
@@ -342,12 +282,13 @@
   }
 
   .btn-copy {
-    width: 100%; /* Botão fácil de clicar */
+    width: 100%; /* Botão ocupa a largura toda - FÁCIL CLICAR */
     justify-content: center;
     padding: 12px;
   }
 
+  /* 2. Ajuste de grids */
   .stats-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr; /* Cards ocupam largura total */
   }
 }
