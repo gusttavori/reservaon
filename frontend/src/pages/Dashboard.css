@@ -15,7 +15,7 @@
   height: 100vh;
   background-color: var(--bg-color);
   font-family: 'Inter', sans-serif;
-  overflow: hidden; /* Importante para layout fixo */
+  overflow: hidden; 
 }
 
 /* --- SIDEBAR & LOGO --- */
@@ -27,7 +27,7 @@
   flex-direction: column;
   border-right: 1px solid #1e293b;
   transition: all 0.3s ease;
-  z-index: 10;
+  z-index: 20; /* Aumentei o z-index para garantir que fique acima */
 }
 
 .brand-container {
@@ -40,18 +40,18 @@
   margin-bottom: 1rem;
 }
 
-/* DESTAQUE DA LOGO */
+/* CORREÇÃO DA LOGO: Fundo translúcido para contraste em vez de branco */
 .brand-logo-wrapper {
   width: 90px;
   height: 90px;
-  background: white; /* Fundo branco para destacar a logo */
+  background: rgba(255, 255, 255, 0.1); /* Translúcido para não sumir a logo branca */
   border-radius: 50%;
-  padding: 12px;
+  padding: 15px; /* Mais padding */
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 0 15px rgba(37, 99, 235, 0.4); /* Glow azul sutil */
-  border: 4px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 15px rgba(37, 99, 235, 0.4); 
+  border: 2px solid rgba(255, 255, 255, 0.2);
   transition: transform 0.3s ease;
 }
 
@@ -68,8 +68,18 @@
 
 .sidebar-nav {
   flex: 1;
-  overflow-y: auto; /* Permite scroll se o menu for grande */
+  overflow-y: auto; 
   padding: 0 1rem;
+}
+
+/* Estilo da barra de rolagem fina para o menu */
+.sidebar-nav::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+.sidebar-nav::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.2);
+  border-radius: 4px;
 }
 
 .nav-item {
@@ -96,7 +106,7 @@
   font-weight: 500;
 }
 
-/* --- MINI PERFIL DO USUÁRIO --- */
+/* --- MINI PERFIL --- */
 .user-mini-profile {
   margin-top: auto;
   padding: 1.5rem;
@@ -147,11 +157,6 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: opacity 0.2s;
-}
-
-.btn-logout:hover {
-  opacity: 0.8;
 }
 
 /* --- CONTEÚDO PRINCIPAL --- */
@@ -162,29 +167,11 @@
   text-align: left;
 }
 
-.dashboard-welcome {
-  margin-bottom: 2rem;
-}
+.dashboard-welcome h1 { font-size: 1.8rem; color: var(--text-primary); margin: 0 0 4px 0; }
+.dashboard-welcome p { color: var(--text-secondary); margin: 0; }
+.section-title { font-size: 1.5rem; margin-bottom: 1.5rem; color: var(--text-primary); font-weight: 700; }
 
-.dashboard-welcome h1 {
-  font-size: 1.8rem;
-  color: var(--text-primary);
-  margin: 0 0 4px 0;
-}
-
-.dashboard-welcome p {
-  color: var(--text-secondary);
-  margin: 0;
-}
-
-.section-title {
-  font-size: 1.5rem;
-  margin-bottom: 1.5rem;
-  color: var(--text-primary);
-  font-weight: 700;
-}
-
-/* --- SHARE CARD (RESPONSIVO) --- */
+/* --- SHARE CARD --- */
 .share-card {
   border-radius: 16px;
   padding: 2rem;
@@ -195,35 +182,14 @@
   gap: 1.5rem;
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
   color: white;
-  position: relative;
   overflow: hidden;
 }
+.share-card.basic { background: linear-gradient(135deg, #1e293b 0%, #334155 100%); }
+.share-card.premium { background: linear-gradient(135deg, #111827 0%, #374151 100%); border: 1px solid #374151; }
 
-.share-card.basic {
-  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-}
+.share-info h3 { display: flex; align-items: center; gap: 10px; margin: 0 0 0.5rem 0; font-size: 1.25rem; }
+.share-info p { margin: 0; opacity: 0.9; line-height: 1.5; max-width: 500px; }
 
-.share-card.premium {
-  background: linear-gradient(135deg, #111827 0%, #374151 100%);
-  border: 1px solid #374151;
-}
-
-.share-info h3 {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 0 0 0.5rem 0;
-  font-size: 1.25rem;
-}
-
-.share-info p {
-  margin: 0;
-  opacity: 0.9;
-  line-height: 1.5;
-  max-width: 500px;
-}
-
-/* Container Link + Botão */
 .link-box-container {
   background: rgba(255, 255, 255, 0.1);
   padding: 6px;
@@ -235,187 +201,121 @@
   max-width: 100%;
 }
 
-.link-display {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 0 12px;
-  overflow: hidden;
-}
-
+.link-display { display: flex; align-items: center; gap: 8px; padding: 0 12px; overflow: hidden; }
 .link-url {
-  font-family: monospace;
-  font-size: 0.95rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis; /* Corta link longo */
-  max-width: 250px;
-  color: rgba(255, 255, 255, 0.9);
+  font-family: monospace; font-size: 0.95rem; white-space: nowrap; overflow: hidden;
+  text-overflow: ellipsis; max-width: 250px; color: rgba(255, 255, 255, 0.9);
 }
-
-.link-icon {
-  color: rgba(255, 255, 255, 0.6);
-  flex-shrink: 0;
-}
+.link-icon { color: rgba(255, 255, 255, 0.6); flex-shrink: 0; }
 
 .btn-copy {
-  background: white;
-  color: #0f172a;
-  border: none;
-  border-radius: 8px;
-  padding: 10px 16px;
-  font-weight: 600;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  white-space: nowrap;
-  transition: all 0.2s;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  background: white; color: #0f172a; border: none; border-radius: 8px; padding: 10px 16px;
+  font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; white-space: nowrap;
+  transition: all 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
-
-.btn-copy:hover {
-  background: #f1f5f9;
-  transform: translateY(-1px);
-}
+.btn-copy:hover { background: #f1f5f9; transform: translateY(-1px); }
 
 /* --- ESTATÍSTICAS --- */
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 1.5rem;
-}
-
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem; }
 .stat-card {
-  background: var(--surface);
-  padding: 1.5rem;
-  border-radius: 16px;
-  border: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  gap: 1.2rem;
-  box-shadow: var(--shadow-sm);
-  transition: transform 0.2s;
+  background: var(--surface); padding: 1.5rem; border-radius: 16px; border: 1px solid var(--border);
+  display: flex; align-items: center; gap: 1.2rem; box-shadow: var(--shadow-sm); transition: transform 0.2s;
 }
-
-.stat-card:hover {
-  transform: translateY(-3px);
-  box-shadow: var(--shadow-md);
-}
-
-.stat-icon {
-  width: 52px;
-  height: 52px;
-  border-radius: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-}
-
+.stat-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+.stat-icon { width: 52px; height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center; color: white; }
 .bg-blue { background: linear-gradient(135deg, #3b82f6, #2563eb); }
 .bg-green { background: linear-gradient(135deg, #10b981, #059669); }
 .bg-purple { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
-
-.stat-card h4 {
-  margin: 0;
-  color: var(--text-secondary);
-  font-size: 0.85rem;
-  font-weight: 600;
-  text-transform: uppercase;
-}
-
-.stat-value {
-  margin: 4px 0 0 0;
-  font-size: 1.75rem;
-  font-weight: 800;
-  color: var(--text-primary);
-}
+.stat-card h4 { margin: 0; color: var(--text-secondary); font-size: 0.85rem; font-weight: 600; text-transform: uppercase; }
+.stat-value { margin: 4px 0 0 0; font-size: 1.75rem; font-weight: 800; color: var(--text-primary); }
 
 /* --- TELAS DE BLOQUEIO --- */
-.lock-screen-container {
-  padding: 3rem;
-  background: white;
-  border-radius: 16px;
-  border: 1px solid #e2e8f0;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-}
-.lock-icon-wrapper {
-  background: #fef3c7;
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 1.5rem;
-}
+.lock-screen-container { padding: 3rem; background: white; border-radius: 16px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; align-items: flex-start; }
+.lock-icon-wrapper { background: #fef3c7; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem; }
 .lock-title { margin: 0 0 10px 0; font-size: 1.25rem; color: #1e293b; }
 .lock-description { color: #64748b; margin: 0 0 20px 0; line-height: 1.6; }
 
 /* --- ANIMAÇÕES --- */
 .animate-fade-in { animation: fadeIn 0.3s ease-in-out; }
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-/* --- RESPONSIVIDADE (MOBILE) --- */
+/* --- RESPONSIVIDADE CORRIGIDA (MOBILE) --- */
 @media (max-width: 900px) {
   .dashboard-layout {
-    flex-direction: column;
+    flex-direction: column; /* Coloca sidebar no topo */
   }
 
+  /* SIDEBAR VIRA UM HEADER FIXO */
   .sidebar {
-    position: relative;
+    position: sticky;
+    top: 0;
     width: 100%;
     height: auto;
-    flex-direction: row;
-    align-items: center;
-    padding: 0.5rem 1rem;
+    flex-direction: row; /* Itens em linha, mas com quebra */
+    flex-wrap: wrap; /* Permite que o menu vá para a linha de baixo */
+    padding: 0;
     border-bottom: 1px solid #1e293b;
     border-right: none;
     justify-content: space-between;
+    align-items: center;
   }
 
+  /* LOGO (Esquerda) */
   .brand-container {
-    padding: 0;
-    margin: 0;
+    order: 1; /* Primeiro */
+    padding: 10px 15px;
     border: none;
+    margin: 0;
   }
   
   .brand-logo-wrapper {
     width: 50px;
     height: 50px;
-    padding: 5px;
-    border-width: 2px;
-  }
-
-  /* No mobile, escondemos o menu lateral e usamos um botão ou apenas ícones */
-  /* Neste exemplo, simplifico escondendo o menu expandido e mostrando apenas o perfil */
-  .sidebar-nav {
-    display: none; 
-  }
-
-  .user-mini-profile {
+    padding: 8px;
+    background: transparent; /* Remove fundo para logo aparecer */
     border: none;
-    padding: 0;
+    box-shadow: none; /* Remove brilho excessivo no mobile */
+  }
+
+  /* PERFIL (Direita) */
+  .user-mini-profile {
+    order: 2; /* Segundo */
+    border: none;
+    padding: 10px 15px;
     margin: 0;
+    width: auto;
   }
   
-  .user-info-text { display: none; } /* Esconde nome no mobile topo */
+  .user-info-text { display: none; } /* Esconde nome no topo para economizar espaço */
+
+  /* NAVEGAÇÃO (Linha de Baixo - Rolagem Horizontal) */
+  .sidebar-nav {
+    order: 3; /* Terceiro (Linha de baixo) */
+    width: 100%;
+    display: flex; /* EXIBE O MENU! */
+    flex-direction: row;
+    overflow-x: auto; /* Rolagem horizontal */
+    padding: 10px;
+    background: rgba(0,0,0,0.2); /* Fundo um pouco mais escuro para separar */
+    gap: 8px;
+    white-space: nowrap;
+  }
+
+  .nav-item {
+    flex-shrink: 0; /* Impede que os botões encolham */
+    margin: 0;
+    font-size: 0.85rem;
+    padding: 8px 12px;
+  }
 
   .main-content {
     margin: 0;
     padding: 1.5rem;
-    padding-bottom: 80px; /* Espaço pro scroll */
+    padding-bottom: 80px; 
   }
 }
 
 @media (max-width: 768px) {
-  /* Card de link responsivo */
   .share-card {
     flex-direction: column;
     align-items: flex-start;
@@ -425,7 +325,7 @@
 
   .link-box-container {
     width: 100%;
-    flex-direction: column; /* Empilha */
+    flex-direction: column;
     padding: 12px;
     gap: 12px;
     background: rgba(0,0,0,0.3);
@@ -442,12 +342,12 @@
   }
 
   .btn-copy {
-    width: 100%; /* Botão largura total - FÁCIL DE CLICAR */
+    width: 100%; /* Botão fácil de clicar */
     justify-content: center;
     padding: 12px;
   }
 
   .stats-grid {
-    grid-template-columns: 1fr; /* Um card por linha */
+    grid-template-columns: 1fr;
   }
 }
