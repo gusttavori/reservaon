@@ -30,10 +30,13 @@ const AppointmentsList = () => {
 
   const fetchData = async () => {
     try {
+      // NOTE: Ensure the route '/api/company/settings' matches your backend mount point.
+      // If companyRoutes is mounted at '/api/company', this is correct.
+      // If it's mounted at '/api', change to '/api/settings'.
       const [resApp, resServ, resSettings] = await Promise.all([
         api.get('/api/appointments'),
         api.get('/api/services'),
-        api.get('/api/settings')
+        api.get('/api/company/settings') 
       ]);
 
       setAppointments(resApp.data);
@@ -232,18 +235,6 @@ const AppointmentsList = () => {
                       <span>{app.serviceName || app.service?.name}</span>
                     </div>
                     
-                    <div className="meta-row" style={{
-                      color: app.professionalName ? '#64748b' : '#16a34a', 
-                      fontWeight: app.professionalName ? 'normal' : '600'
-                    }}>
-                        <User size={14} /> 
-                        <span>
-                           {app.professionalName 
-                             ? `Prof.: ${app.professionalName}` 
-                             : "Sem preferência (Livre)"}
-                        </span>
-                    </div>
-
                     {(app.price || app.service?.price) && (
                          <div className="meta-row price-row">
                             <span>R$ {Number(app.price || app.service?.price).toFixed(2)}</span>

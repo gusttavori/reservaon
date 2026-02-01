@@ -4,7 +4,7 @@ const prisma = new PrismaClient();
 // --- CONFIGURAÇÕES DA EMPRESA ---
 exports.getSettings = async (req, res) => {
   try {
-    // CORREÇÃO: Usamos req.companyId direto (vem do token)
+    // CORREÇÃO: Usamos req.companyId direto (vem do token via authMiddleware)
     if (!req.companyId) {
       return res.status(401).json({ error: "Token inválido (sem empresa vinculada)." });
     }
