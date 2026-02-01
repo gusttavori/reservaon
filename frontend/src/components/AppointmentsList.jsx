@@ -13,7 +13,7 @@ const AppointmentsList = () => {
   const [appointments, setAppointments] = useState([]);
   const [services, setServices] = useState([]);
   const [company, setCompany] = useState(null);
-  const [professionals, setProfessionals] = useState([]);
+  const [professionals, setProfessionals] = useState([]); // State for list of employees
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all'); 
   
@@ -22,7 +22,7 @@ const AppointmentsList = () => {
     customerName: '',
     customerPhone: '',
     serviceId: '',
-    professionalId: '',
+    professionalId: '', // New field for selected professional
     date: new Date()
   });
 
@@ -33,6 +33,7 @@ const AppointmentsList = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
+      // 1. Fetch Appointments and Services
       const [resApp, resServ] = await Promise.all([
         api.get('/api/appointments'),
         api.get('/api/services')
@@ -40,14 +41,24 @@ const AppointmentsList = () => {
       setAppointments(resApp.data);
       setServices(resServ.data);
 
+      // 2. Fetch Settings (which now includes users/professionals)
       try {
-        const resSettings = await api.get('/api/settings');
+        // Adjust route based on your routing setup (companyRoutes)
+        const resSettings = await api.get('/api/company/settings');
         setCompany(resSettings.data);
+        
+        // Populate professionals list
         if (resSettings.data.users) {
           setProfessionals(resSettings.data.users);
         }
       } catch (settingsError) {
-        console.warn("Aviso: Erro ao carregar configurações/equipe.", settingsError);
+        console.warn("Aviso: Erro ao carregar configurações/equipe. Verifique a rota /api/company/settings.", settingsError);
+        // Fallback in case route is different
+        try {
+             const resSettingsAlt = await api.get('/api/settings');
+             setCompany(resSettingsAlt.data);
+             if (resSettingsAlt.data.users) setProfessionals(resSettingsAlt.data.users);
+        } catch(e) {}
       }
 
     } catch (error) {
@@ -83,7 +94,7 @@ const AppointmentsList = () => {
         clientName: formData.customerName,
         clientPhone: formData.customerPhone,
         serviceId: formData.serviceId,
-        professionalId: formData.professionalId,
+        professionalId: formData.professionalId, // Send selected ID or empty string
         date: dateToSend,
         notes: "Agendamento Manual (Pelo Admin)"
       });
@@ -327,6 +338,7 @@ const AppointmentsList = () => {
                 </div>
               </div>
 
+              {/* SELEÇÃO DE PROFISSIONAL (NOVO) */}
               <div className="form-group">
                 <label>Profissional</label>
                 <div className="input-icon-wrapper">

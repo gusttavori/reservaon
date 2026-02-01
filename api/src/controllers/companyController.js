@@ -4,13 +4,14 @@ const prisma = new PrismaClient();
 // --- CONFIGURAÇÕES DA EMPRESA ---
 exports.getSettings = async (req, res) => {
   try {
+    // CORREÇÃO: Usamos req.companyId direto (vem do token via authMiddleware)
     if (!req.companyId) {
       return res.status(401).json({ error: "Token inválido (sem empresa vinculada)." });
     }
 
     const company = await prisma.company.findUnique({ 
       where: { id: req.companyId },
-      select: {
+      select: { // Selecionamos campos específicos + users
         name: true,
         category: true,
         openingTime: true,
@@ -21,7 +22,7 @@ exports.getSettings = async (req, res) => {
         address: true,
         description: true,
         logoUrl: true,
-        // ADICIONADO: Retorna lista de profissionais
+        // ADICIONADO: Retorna lista de profissionais para o select do dashboard
         users: {
           select: {
             id: true,
@@ -33,6 +34,7 @@ exports.getSettings = async (req, res) => {
     
     if (!company) return res.status(404).json({ error: "Empresa não encontrada" });
 
+    // A resposta já vai no formato correto direto do select do prisma
     res.json(company);
   } catch (error) {
     console.error("Erro getSettings:", error);
@@ -46,6 +48,7 @@ exports.updateSettings = async (req, res) => {
 
     const { name, openingTime, closingTime, workDays, whatsapp, workSchedule, address, description, logoUrl, category } = req.body;
     
+    // CORREÇÃO: Atualiza direto pelo ID da empresa
     const company = await prisma.company.update({
       where: { id: req.companyId },
       data: { name, openingTime, closingTime, workDays, whatsapp, workSchedule, address, description, logoUrl, category }
@@ -58,10 +61,12 @@ exports.updateSettings = async (req, res) => {
   }
 };
 
-// --- FINANCEIRO ---
+// --- FINANCEIRO (CORRIGIDO) ---
 
 exports.getFinancialStats = async (req, res) => {
   try {
+    console.log("🔍 FinancialStats: Iniciando para Empresa ID:", req.companyId);
+
     if (!req.companyId) {
       return res.status(401).json({ error: "ID da empresa não encontrado no token." });
     }
@@ -69,12 +74,14 @@ exports.getFinancialStats = async (req, res) => {
     const { month, year } = req.query;
     if (!month || !year) return res.status(400).json({ error: "Mês e Ano obrigatórios." });
 
+    // Datas
     const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
     const endDate = new Date(parseInt(year), parseInt(month), 0, 23, 59, 59, 999);
 
+    // Agendamentos
     const appointments = await prisma.appointment.findMany({
       where: {
-        companyId: req.companyId,
+        companyId: req.companyId, // <--- Correção aqui
         date: { gte: startDate, lte: endDate },
         status: { not: 'CANCELLED' }
       },
@@ -82,20 +89,22 @@ exports.getFinancialStats = async (req, res) => {
       orderBy: { date: 'desc' }
     });
 
+    // Despesas
     let expenses = [];
     try {
       expenses = await prisma.expense.findMany({
         where: {
-          companyId: req.companyId,
+          companyId: req.companyId, // <--- Correção aqui
           date: { gte: startDate, lte: endDate }
         },
         orderBy: { date: 'desc' }
       });
     } catch (dbError) {
-      console.error("Erro tabela expense:", dbError.message);
+      console.error("⚠️ Erro tabela expense (ainda não existe?):", dbError.message);
       expenses = []; 
     }
 
+    // Cálculos
     let realizedRevenue = 0;
     let potentialRevenue = 0;
     let totalExpenses = expenses.reduce((acc, curr) => acc + Number(curr.amount), 0);
@@ -120,7 +129,7 @@ exports.getFinancialStats = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("Erro Geral Financeiro:", error);
+    console.error("🔴 Erro Geral Financeiro:", error);
     res.status(500).json({ error: "Erro interno no financeiro." });
   }
 };
@@ -135,6 +144,9 @@ exports.addExpense = async (req, res) => {
       return res.status(400).json({ error: "Dados incompletos." });
     }
 
+    console.log("Salvando despesa para empresa:", req.companyId);
+
+    // CORREÇÃO: Usa companyId direto
     const expense = await prisma.expense.create({
       data: {
         description,
@@ -156,6 +168,7 @@ exports.deleteExpense = async (req, res) => {
   try {
     if (!req.companyId) return res.status(401).json({ error: "Acesso negado." });
 
+    // Verifica se a despesa é desta empresa
     const expense = await prisma.expense.findFirst({ 
       where: { 
         id, 
