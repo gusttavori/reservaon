@@ -4,6 +4,7 @@ import { Calendar, Phone, Plus, X, Scissors, User, ChevronDown, Clock } from 'lu
 import DatePicker, { registerLocale } from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import ptBR from 'date-fns/locale/pt-BR';
+import { setHours, setMinutes } from 'date-fns';
 import './AppointmentsList.css';
 
 registerLocale('pt-BR', ptBR);
@@ -11,8 +12,9 @@ registerLocale('pt-BR', ptBR);
 const AppointmentsList = () => {
   const [appointments, setAppointments] = useState([]);
   const [services, setServices] = useState([]);
+  const [company, setCompany] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('all'); // all, today, tomorrow
+  const [filter, setFilter] = useState('all'); 
   
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({
@@ -28,13 +30,15 @@ const AppointmentsList = () => {
 
   const fetchData = async () => {
     try {
-      const [resApp, resServ] = await Promise.all([
+      const [resApp, resServ, resSettings] = await Promise.all([
         api.get('/api/appointments'),
-        api.get('/api/services')
+        api.get('/api/services'),
+        api.get('/api/settings')
       ]);
 
       setAppointments(resApp.data);
       setServices(resServ.data);
+      setCompany(resSettings.data);
     } catch (error) {
       console.error("Erro ao carregar dados:", error);
     } finally {
@@ -43,27 +47,23 @@ const AppointmentsList = () => {
   };
 
   const handleStatusChange = async (id, newStatus) => {
-    // Atualização Otimista (Muda na tela antes de confirmar no banco)
     const oldAppointments = [...appointments];
     setAppointments(prev => prev.map(app => 
       app.id === id ? { ...app, status: newStatus } : app
     ));
 
     try {
-      // Usa rota específica de status
       await api.put(`/api/appointments/${id}/status`, { status: newStatus });
     } catch (error) {
       console.error("Erro ao atualizar status:", error);
       alert("Erro ao atualizar status. Verifique sua conexão.");
-      setAppointments(oldAppointments); // Reverte se der erro
+      setAppointments(oldAppointments);
     }
   };
 
   const handleManualBooking = async (e) => {
     e.preventDefault();
     try {
-      // --- CORREÇÃO DE FUSO HORÁRIO ---
-      // Garante que o horário selecionado (ex: 16:00) chegue como 16:00 no servidor
       const dateToSend = new Date(formData.date);
       dateToSend.setMinutes(dateToSend.getMinutes() - dateToSend.getTimezoneOffset());
 
@@ -71,13 +71,13 @@ const AppointmentsList = () => {
         clientName: formData.customerName,
         clientPhone: formData.customerPhone,
         serviceId: formData.serviceId,
-        date: dateToSend, // Envia a data ajustada
+        date: dateToSend,
         notes: "Agendamento Manual (Pelo Admin)"
       });
       
       alert("Agendamento criado com sucesso!");
       setShowModal(false);
-      fetchData(); // Recarrega a lista
+      fetchData(); 
       setFormData({ customerName: '', customerPhone: '', serviceId: '', date: new Date() });
     } catch (error) {
       const msg = error.response?.data?.error || "Erro ao criar agendamento.";
@@ -87,28 +87,75 @@ const AppointmentsList = () => {
 
   const filterAppointments = () => {
     const now = new Date();
-    // Zera as horas para comparar apenas o dia
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-    const tomorrowStart = todayStart + 86400000; // +24 horas
+    const tomorrowStart = todayStart + 86400000;
     const afterTomorrowStart = tomorrowStart + 86400000;
 
     return appointments.filter(app => {
       const appTime = new Date(app.date).getTime();
-      
-      if (filter === 'today') {
-        return appTime >= todayStart && appTime < tomorrowStart;
+      if (filter === 'today') return appTime >= todayStart && appTime < tomorrowStart;
+      if (filter === 'tomorrow') return appTime >= tomorrowStart && appTime < afterTomorrowStart;
+      return true; 
+    }).sort((a, b) => new Date(a.date) - new Date(b.date));
+  };
+
+  const isWorkDay = (date) => {
+    if (!company) return true;
+    
+    if (company.workSchedule && Array.isArray(company.workSchedule)) {
+      const dayIndex = date.getDay();
+      const dayConfig = company.workSchedule.find(d => d.day === dayIndex);
+      return dayConfig && dayConfig.active;
+    }
+
+    const day = date.getDay();
+    const allowedDays = company.workDays ? company.workDays.split(',').map(Number) : [];
+    return allowedDays.length > 0 ? allowedDays.includes(day) : true;
+  };
+
+  const getOpenTime = (date) => {
+    let hour = 8;
+    let minute = 0;
+
+    if (company) {
+      if (company.workSchedule && Array.isArray(company.workSchedule)) {
+        const dayIndex = date.getDay();
+        const dayConfig = company.workSchedule.find(d => d.day === dayIndex);
+        if (dayConfig && dayConfig.active) {
+          [hour, minute] = dayConfig.start.split(':').map(Number);
+        }
+      } else if (company.openingTime) {
+        [hour, minute] = company.openingTime.split(':').map(Number);
       }
-      if (filter === 'tomorrow') {
-        return appTime >= tomorrowStart && appTime < afterTomorrowStart;
+    }
+    
+    const timeDate = new Date(date);
+    return setHours(setMinutes(timeDate, minute), hour);
+  };
+
+  const getCloseTime = (date) => {
+    let hour = 18;
+    let minute = 0;
+
+    if (company) {
+      if (company.workSchedule && Array.isArray(company.workSchedule)) {
+        const dayIndex = date.getDay();
+        const dayConfig = company.workSchedule.find(d => d.day === dayIndex);
+        if (dayConfig && dayConfig.active) {
+          [hour, minute] = dayConfig.end.split(':').map(Number);
+        }
+      } else if (company.closingTime) {
+        [hour, minute] = company.closingTime.split(':').map(Number);
       }
-      return true; // 'all'
-    }).sort((a, b) => new Date(a.date) - new Date(b.date)); // Ordena do mais antigo para o mais novo
+    }
+
+    const timeDate = new Date(date);
+    return setHours(setMinutes(timeDate, minute), hour);
   };
 
   const formatDate = (dateString) => new Date(dateString).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }).toUpperCase();
   const formatTime = (dateString) => new Date(dateString).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
-  // Componente Select Personalizado para Status
   const StatusSelect = ({ currentStatus, onChange }) => {
     const getStatusColor = (s) => {
       switch(s) {
@@ -119,27 +166,17 @@ const AppointmentsList = () => {
         default: return { bg: '#f8fafc', text: '#64748b', border: '#e2e8f0' };
       }
     };
-
     const style = getStatusColor(currentStatus);
-
     return (
       <div className="status-select-wrapper" style={{position: 'relative', display: 'inline-block'}}>
         <select 
           value={currentStatus} 
           onChange={(e) => onChange(e.target.value)}
           style={{
-            appearance: 'none',
-            backgroundColor: style.bg,
-            color: style.text,
-            border: `1px solid ${style.border}`,
-            padding: '6px 28px 6px 12px',
-            borderRadius: '20px',
-            fontSize: '0.75rem',
-            fontWeight: '600',
-            cursor: 'pointer',
-            outline: 'none',
-            minWidth: '120px',
-            transition: 'all 0.2s'
+            appearance: 'none', backgroundColor: style.bg, color: style.text,
+            border: `1px solid ${style.border}`, padding: '6px 28px 6px 12px',
+            borderRadius: '20px', fontSize: '0.75rem', fontWeight: '600',
+            cursor: 'pointer', outline: 'none', minWidth: '120px', transition: 'all 0.2s'
           }}
         >
           <option value="PENDING">Pendente</option>
@@ -147,10 +184,7 @@ const AppointmentsList = () => {
           <option value="COMPLETED">Concluído</option>
           <option value="CANCELLED">Cancelado</option>
         </select>
-        <ChevronDown size={14} style={{
-          position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', 
-          color: style.text, pointerEvents: 'none'
-        }}/>
+        <ChevronDown size={14} style={{position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', color: style.text, pointerEvents: 'none'}}/>
       </div>
     );
   };
@@ -161,7 +195,6 @@ const AppointmentsList = () => {
 
   return (
     <div className="appointments-container">
-      
       <div className="appointments-header">
         <div className="filter-group">
           <button className={`filter-btn ${filter === 'all' ? 'active' : ''}`} onClick={() => setFilter('all')}>Todos</button>
@@ -184,28 +217,23 @@ const AppointmentsList = () => {
           filteredApps.map(app => (
             <div key={app.id} className={`appointment-card ${app.status === 'CANCELLED' ? 'cancelled-card' : ''}`}>
               <div className={`status-indicator ${app.status.toLowerCase()}`}></div>
-              
               <div className="app-content">
                 <div className="app-time-box">
                   <span className="app-date">{formatDate(app.date)}</span>
                   <span className="app-hour">{formatTime(app.date)}</span>
                 </div>
-                
                 <div className="app-details">
-                  {/* Tenta pegar nome do cliente, usuário logado ou título genérico */}
                   <h4 title={app.clientName || app.user?.name}>
                     {app.clientName || app.user?.name || "Cliente Sem Nome"}
                   </h4>
-                  
                   <div className="app-meta">
                     <div className="meta-row">
                       <Scissors size={14} /> 
                       <span>{app.serviceName || app.service?.name}</span>
                     </div>
-
-                    {/* MOSTRAR PROFISSIONAL OU "SEM PREFERÊNCIA" */}
+                    
                     <div className="meta-row" style={{
-                      color: app.professionalName ? '#64748b' : '#16a34a', // Verde se for livre
+                      color: app.professionalName ? '#64748b' : '#16a34a', 
                       fontWeight: app.professionalName ? 'normal' : '600'
                     }}>
                         <User size={14} /> 
@@ -216,22 +244,15 @@ const AppointmentsList = () => {
                         </span>
                     </div>
 
-                    {/* Mostra preço se disponível */}
                     {(app.price || app.service?.price) && (
                          <div className="meta-row price-row">
                             <span>R$ {Number(app.price || app.service?.price).toFixed(2)}</span>
                          </div>
                     )}
-                    
                     {(app.clientPhone || app.user?.phone) && (
                       <div className="meta-row">
                         <Phone size={14} /> 
-                        <a 
-                          href={`https://wa.me/55${(app.clientPhone || app.user?.phone || '').replace(/\D/g, '')}`} 
-                          target="_blank" 
-                          rel="noreferrer"
-                          style={{color: 'inherit', textDecoration: 'none', ':hover': {textDecoration: 'underline'}}}
-                        >
+                        <a href={`https://wa.me/55${(app.clientPhone || app.user?.phone || '').replace(/\D/g, '')}`} target="_blank" rel="noreferrer" style={{color: 'inherit', textDecoration: 'none'}}>
                             {app.clientPhone || app.user?.phone}
                         </a>
                       </div>
@@ -239,14 +260,12 @@ const AppointmentsList = () => {
                   </div>
                 </div>
               </div>
-
               <div className="app-actions">
                 <StatusSelect 
                   currentStatus={app.status} 
                   onChange={(newVal) => handleStatusChange(app.id, newVal)} 
                 />
               </div>
-
             </div>
           ))
         )}
@@ -297,11 +316,20 @@ const AppointmentsList = () => {
                 <div className="input-icon-wrapper">
                     <Clock size={18} className="input-icon" style={{zIndex: 1}} />
                     <DatePicker 
-                    selected={formData.date} 
-                    onChange={date => setFormData({...formData, date})}
-                    showTimeSelect dateFormat="dd/MM/yyyy HH:mm" locale="pt-BR"
-                    className="modal-input with-icon" wrapperClassName="datePicker"
-                    timeFormat="HH:mm" timeIntervals={30}
+                      selected={formData.date} 
+                      onChange={date => setFormData({...formData, date})}
+                      showTimeSelect 
+                      dateFormat="dd/MM/yyyy HH:mm" 
+                      locale="pt-BR"
+                      className="modal-input with-icon" 
+                      wrapperClassName="datePicker"
+                      timeFormat="HH:mm" 
+                      timeIntervals={30}
+                      minDate={new Date()}
+                      filterDate={isWorkDay}
+                      minTime={getOpenTime(formData.date || new Date())}
+                      maxTime={getCloseTime(formData.date || new Date())}
+                      placeholderText="Selecione data e hora..."
                     />
                 </div>
               </div>
