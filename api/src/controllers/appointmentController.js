@@ -1,21 +1,18 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-// Listar Agenda
 exports.listAppointments = async (req, res) => {
   const companyId = req.user.companyId;
   const userId = req.user.userId;
-  const userRole = req.user.role; // Certifique-se que o role vem no token
+  const userRole = req.user.role;
 
   try {
     const whereClause = { companyId };
 
-    // --- LÓGICA DE VISIBILIDADE ---
-    // Se NÃO for o dono (ou seja, é um funcionário/profissional)
     if (userRole !== 'OWNER') {
       whereClause.OR = [
-        { professionalId: userId }, // Vê apenas os seus agendamentos
-        { professionalId: null }    // OU vê os agendamentos "Sem Preferência" (Livres)
+        { professionalId: userId },
+        { professionalId: null }
       ];
     }
 
@@ -24,29 +21,20 @@ exports.listAppointments = async (req, res) => {
       include: {
         service: true,
         professional: { select: { name: true } },
-        user: { select: { name: true, email: true } } // Traz dados do usuário logado se existir
+        user: { select: { name: true, email: true } }
       },
-      orderBy: {
-        date: 'asc'
-      }
+      orderBy: { date: 'asc' }
     });
 
-    // Formatação robusta para garantir que o nome apareça
     const formatted = appointments.map(appt => ({
       id: appt.id,
       date: appt.date,
       status: appt.status,
       notes: appt.notes,
-      
-      // Lógica de Nome: Prioriza o nome digitado (público/interno) > nome do usuário cadastrado > fallback
       clientName: appt.clientName || appt.user?.name || "Cliente sem nome",
-      
-      // Lógica de Contato: Prioriza telefone digitado > email do usuário
       clientPhone: appt.clientPhone || appt.user?.email || "Sem contato",
-      
       serviceName: appt.service.name,
       price: appt.service.price,
-      // Se for null, o frontend vai interpretar como "Sem preferência"
       professionalName: appt.professional?.name || null
     }));
 
@@ -59,7 +47,7 @@ exports.listAppointments = async (req, res) => {
 };
 
 exports.createAppointmentInternal = async (req, res) => {
-  const { date, clientName, clientPhone, serviceId, notes, professionalId } = req.body;
+  let { date, clientName, clientPhone, serviceId, notes, professionalId } = req.body;
   const companyId = req.user.companyId;
 
   try {
@@ -68,6 +56,9 @@ exports.createAppointmentInternal = async (req, res) => {
     if (!clientName || !serviceId || !date) {
       return res.status(400).json({ error: "Nome, Serviço e Data são obrigatórios." });
     }
+
+    // Se professionalId vier vazio, define como null (Sem preferência)
+    if (professionalId === "") professionalId = null;
 
     const checkAvailability = await prisma.appointment.findFirst({
       where: {
@@ -91,7 +82,7 @@ exports.createAppointmentInternal = async (req, res) => {
         notes,
         status: "CONFIRMED",
         userId: null, 
-        professionalId: professionalId || req.user.userId 
+        professionalId: professionalId 
       }
     });
 

@@ -1,23 +1,22 @@
 const express = require('express');
 const router = express.Router();
-const companyController = require('../controllers/companyController');
-const authMiddleware = require('../middlewares/authMiddleware');
+const appointmentController = require('./controllers/appointmentController');
+const companyController = require('./controllers/companyController');
+const authMiddleware = require('./middlewares/authMiddleware');
 
-// --- ROTAS DE CONFIGURAÇÃO ---
-// GET /api/company/settings -> Busca os dados da empresa
+// --- AGENDAMENTOS ---
+router.get('/appointments', authMiddleware, appointmentController.listAppointments);
+router.post('/appointments', authMiddleware, appointmentController.createAppointmentInternal);
+router.put('/appointments/:id/status', authMiddleware, appointmentController.updateStatus);
+router.delete('/appointments/:id', authMiddleware, appointmentController.deleteAppointment);
+
+// --- CONFIGURAÇÕES DA EMPRESA (Inclui busca de usuários) ---
 router.get('/settings', authMiddleware, companyController.getSettings);
-
-// PUT /api/company/settings -> Atualiza os dados da empresa
 router.put('/settings', authMiddleware, companyController.updateSettings);
 
-// --- ROTAS FINANCEIRAS ---
-// GET /api/company/financials -> Busca o financeiro
+// --- FINANCEIRO ---
 router.get('/financials', authMiddleware, companyController.getFinancialStats);
-
-// POST /api/company/expenses -> Adiciona despesa
 router.post('/expenses', authMiddleware, companyController.addExpense);
-
-// DELETE /api/company/expenses/:id -> Remove despesa
 router.delete('/expenses/:id', authMiddleware, companyController.deleteExpense);
 
 module.exports = router;

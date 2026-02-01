@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../services/api';
-import { Calendar, Phone, Plus, X, Scissors, User, ChevronDown, Clock } from 'lucide-react';
+import { Calendar, Phone, Plus, X, Scissors, User, ChevronDown, Clock, Briefcase } from 'lucide-react';
 import DatePicker, { registerLocale } from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import ptBR from 'date-fns/locale/pt-BR';
@@ -13,6 +13,7 @@ const AppointmentsList = () => {
   const [appointments, setAppointments] = useState([]);
   const [services, setServices] = useState([]);
   const [company, setCompany] = useState(null);
+  const [professionals, setProfessionals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all'); 
   
@@ -21,6 +22,7 @@ const AppointmentsList = () => {
     customerName: '',
     customerPhone: '',
     serviceId: '',
+    professionalId: '',
     date: new Date()
   });
 
@@ -29,21 +31,28 @@ const AppointmentsList = () => {
   }, []);
 
   const fetchData = async () => {
+    setLoading(true);
     try {
-      // NOTE: Ensure the route '/api/company/settings' matches your backend mount point.
-      // If companyRoutes is mounted at '/api/company', this is correct.
-      // If it's mounted at '/api', change to '/api/settings'.
-      const [resApp, resServ, resSettings] = await Promise.all([
+      const [resApp, resServ] = await Promise.all([
         api.get('/api/appointments'),
-        api.get('/api/services'),
-        api.get('/api/company/settings') 
+        api.get('/api/services')
       ]);
-
       setAppointments(resApp.data);
       setServices(resServ.data);
-      setCompany(resSettings.data);
+
+      try {
+        const resSettings = await api.get('/api/settings');
+        setCompany(resSettings.data);
+        if (resSettings.data.users) {
+          setProfessionals(resSettings.data.users);
+        }
+      } catch (settingsError) {
+        console.warn("Aviso: Erro ao carregar configurações/equipe.", settingsError);
+      }
+
     } catch (error) {
-      console.error("Erro ao carregar dados:", error);
+      console.error("Erro fatal ao carregar agenda:", error);
+      alert("Erro ao conectar com o servidor.");
     } finally {
       setLoading(false);
     }
@@ -74,6 +83,7 @@ const AppointmentsList = () => {
         clientName: formData.customerName,
         clientPhone: formData.customerPhone,
         serviceId: formData.serviceId,
+        professionalId: formData.professionalId,
         date: dateToSend,
         notes: "Agendamento Manual (Pelo Admin)"
       });
@@ -81,7 +91,7 @@ const AppointmentsList = () => {
       alert("Agendamento criado com sucesso!");
       setShowModal(false);
       fetchData(); 
-      setFormData({ customerName: '', customerPhone: '', serviceId: '', date: new Date() });
+      setFormData({ customerName: '', customerPhone: '', serviceId: '', professionalId: '', date: new Date() });
     } catch (error) {
       const msg = error.response?.data?.error || "Erro ao criar agendamento.";
       alert(msg);
@@ -235,6 +245,18 @@ const AppointmentsList = () => {
                       <span>{app.serviceName || app.service?.name}</span>
                     </div>
                     
+                    <div className="meta-row" style={{
+                      color: app.professionalName ? '#64748b' : '#16a34a', 
+                      fontWeight: app.professionalName ? 'normal' : '600'
+                    }}>
+                        <User size={14} /> 
+                        <span>
+                           {app.professionalName 
+                             ? `Prof.: ${app.professionalName}` 
+                             : "Sem preferência (Livre)"}
+                        </span>
+                    </div>
+
                     {(app.price || app.service?.price) && (
                          <div className="meta-row price-row">
                             <span>R$ {Number(app.price || app.service?.price).toFixed(2)}</span>
@@ -280,6 +302,7 @@ const AppointmentsList = () => {
                   />
                 </div>
               </div>
+              
               <div className="form-group">
                 <label>Telefone / WhatsApp</label>
                 <div className="input-icon-wrapper">
@@ -290,6 +313,7 @@ const AppointmentsList = () => {
                   />
                 </div>
               </div>
+
               <div className="form-group">
                 <label>Serviço</label>
                 <div className="input-icon-wrapper">
@@ -302,6 +326,22 @@ const AppointmentsList = () => {
                     </select>
                 </div>
               </div>
+
+              <div className="form-group">
+                <label>Profissional</label>
+                <div className="input-icon-wrapper">
+                    <Briefcase size={18} className="input-icon" />
+                    <select className="modal-input with-icon"
+                        value={formData.professionalId} onChange={e => setFormData({...formData, professionalId: e.target.value})}
+                    >
+                        <option value="">Sem preferência (Livre)</option>
+                        {professionals.map(p => (
+                          <option key={p.id} value={p.id}>{p.name}</option>
+                        ))}
+                    </select>
+                </div>
+              </div>
+
               <div className="form-group">
                 <label>Data e Hora</label>
                 <div className="input-icon-wrapper">
