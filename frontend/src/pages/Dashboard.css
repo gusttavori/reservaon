@@ -150,7 +150,7 @@
 }
 
 .dashboard-welcome h1 { font-size: 1.8rem; color: var(--text-primary); margin: 0 0 4px 0; }
-.dashboard-welcome p { color: var(--text-secondary); margin: 0; }
+.dashboard-welcome p { color: var(--text-secondary); margin-bottom: 15px; }
 .section-title { font-size: 1.5rem; margin-bottom: 1.5rem; color: var(--text-primary); font-weight: 700; }
 
 /* --- SHARE CARD (COM A CORREÇÃO DE RESPONSIVIDADE) --- */
